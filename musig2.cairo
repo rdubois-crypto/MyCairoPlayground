@@ -10,9 +10,9 @@
 ///* https://eprint.iacr.org/2020/1261.pdf             				 */
 ///* note that some constant aggregating values could be precomputed			 */
 //**************************************************************************************/
-%builtins pedersen starkcurve
+%builtins pedersen ec_op
 
-//%builtins pedersen secp256r1curve
+//builtins pedersen secp256r1curve
 
 
 from starkware.cairo.common.registers import get_ap
@@ -43,45 +43,70 @@ from starkware.cairo.common.hash import hash2
 //		const uint8_t *message, const size_t message_t8,
 //		boolean_t *flag_verif)
 
-
-
-func Verif_Musig2{ hash_ptr: HashBuiltin*, ec_op_ptr: EcOpBuiltin*}(R:felt*, s:felt, X :felt*, nb_users: felt, message_ptr: felt*, data_length: felt) ->(flag_verif:felt){
-	alloc_locals;
-	
-	//cy_ecpoint_t *G=cy_ec_get_generator(ctx->ctx_ec); /* get generating point of the curve , todo ec: coder un get_generator */
-	let ecpoint_G:EcPoint=recover_y(StarkCurve.GEN_X);
-	//CY_CHECK(cy_ec_scalarmult_fp(ctx->ctx_ec, G, s, &ec_temp1)); 	/*g^s*/
-	let g_pow_s: EcPoint = ec_mul(s, ecpoint_G);
-   	//CY_CHECK(cy_ec_export(&ctx->ctx_ec->ctx_fp_q, R,ctx->ctx_ec->t8_modular_p,buffer));// free in Cairo, just append x and y to hash context
-	//ctx->H->Hash_Update((void *)ctx->H, buffer, ctx->ctx_ec->t8_modular_p);
-	
-	
+func HSig{ hash_ptr: HashBuiltin*, ec_op_ptr2: EcOpBuiltin*}(R:felt*, s:felt, X :felt*, nb_users: felt, message_ptr: felt*, data_length: felt)->(Hsign:felt){
 	// compute c =·= Hsig(X, R, m ),
 	let (Hsig: HashState*) = hash_init();
 	let Hsig_X: HashState* =hash_update{hash_ptr=hash_ptr}(Hsig, X, 2);// append Aggregated key to hash
 	let Hsig_XR: HashState* =hash_update{hash_ptr=hash_ptr}(Hsig_X, R, 2);// append R part of sig to hash
 	let Hsig_XRm: HashState* =hash_update{hash_ptr=hash_ptr}(Hsig_XR, message_ptr, data_length);// append message to hash
-	local d;
+	
 	%{ print("ap=", ap-1, "fp=",fp, "[ap-1]=",memory[ap-1], "[fp]=", memory[fp+1]) %}
 	
-	let c: felt= hash_finalize{hash_ptr=hash_ptr}(Hsig_XRm);// get hash result as felt
-	d=c;
+	let d: felt= hash_finalize{hash_ptr=hash_ptr}(Hsig_XRm);// get hash result as felt
+ 	return (Hsign=d);
+}
+
+
+//The core of verification algorithm
+func Verif_Musig2_core{ hash_ptr: HashBuiltin*, ec_op_ptr2: EcOpBuiltin*}(R:felt*, s:felt, X :felt*, nb_users: felt, message_ptr: felt*, data_length: felt, c:felt) ->(flag_verif:felt){
+//cy_ecpoint_t *G=cy_ec_get_generator(ctx->ctx_ec); /* get generating point of the curve , todo ec: coder un get_generator */
+	let ecpoint_G:EcPoint=recover_y(StarkCurve.GEN_X);
+	//CY_CHECK(cy_ec_scalarmult_fp(ctx->ctx_ec, G, s, &ec_temp1)); 	/*g^s*/
+	let g_pow_s: EcPoint = ec_mul{ec_op_ptr=ec_op_ptr2}(s, ecpoint_G);
+   		
+	// compute c externally=·= Hsig(X, R, m ),	
 	let ecpoint_R:EcPoint=recover_y(R[0]); // recover R from R.x
-	let ecpoint_X_pow_c:EcPoint=ec_mul(d, ecpoint_R);//compute X^c
+	let ecpoint_X_pow_c:EcPoint=ec_mul{ec_op_ptr=ec_op_ptr2}(c, ecpoint_R);//compute X^c
 	let ecpoint_RXc:EcPoint=ec_add(ecpoint_R, ecpoint_X_pow_c);//compute RX^c
 		
 	//* verifier accepts the signature if gs = RXec*/
-	assert  ecpoint_RXc.x = g_pow_s.x;
-	assert  ecpoint_RXc.y = g_pow_s.y;
+	if(  ecpoint_RXc.x == g_pow_s.x){
+	   return (flag_verif=TRUE);
+	}	
+	   return (flag_verif=FALSE);
+
+}
+
+
+//a one shot instance of the Musig 2 verification algorithm
+func Verif_Musig2_all{ hash_ptr: HashBuiltin*, ec_op_ptr2: EcOpBuiltin*}(R:felt*, s:felt, X :felt*, nb_users: felt, message_ptr: felt*, data_length: felt) ->(flag_verif:felt){
+	alloc_locals;
 	
- ret;	
+	//cy_ecpoint_t *G=cy_ec_get_generator(ctx->ctx_ec); /* get generating point of the curve , todo ec: coder un get_generator */
+	let ecpoint_G:EcPoint=recover_y(StarkCurve.GEN_X);
+	//CY_CHECK(cy_ec_scalarmult_fp(ctx->ctx_ec, G, s, &ec_temp1)); 	/*g^s*/
+	let g_pow_s: EcPoint = ec_mul{ec_op_ptr=ec_op_ptr2}(s, ecpoint_G);
+   		
+	// compute c =·= Hsig(X, R, m ),	
+	let c: felt= HSig(R,s,X,nb_users, message_ptr, data_length);// get hash result as felt
+	local d=c;
+	
+	let ecpoint_R:EcPoint=recover_y(R[0]); // recover R from R.x
+	let ecpoint_X_pow_c:EcPoint=ec_mul{ec_op_ptr=ec_op_ptr2}(d, ecpoint_R);//compute X^c
+	let ecpoint_RXc:EcPoint=ec_add(ecpoint_R, ecpoint_X_pow_c);//compute RX^c
+		
+	//* verifier accepts the signature if gs = RXec*/
+	if(  ecpoint_RXc.x == g_pow_s.x){
+	   return (flag_verif=TRUE);
+	}	
+	   return (flag_verif=FALSE);
 }
 
 	
 //cy_ecpoint_t *G=cy_ec_get_generator(ctx->ctx_ec); /* get generating point of the curve , todo ec: coder un get_generator */
 	
 
-func main{pedersen_ptr: HashBuiltin*, starkcurve_ptr:EcOpBuiltin*}() {
+func main{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
     alloc_locals;
     
     // Get the value of the fp register.
@@ -102,8 +127,9 @@ func main{pedersen_ptr: HashBuiltin*, starkcurve_ptr:EcOpBuiltin*}() {
     //Verif_Musig2{ hash_ptr: HashBuiltin*, ec_op_ptr: EcOpBuiltin*}(ap, s, );
     
   
-    let res:felt=Verif_Musig2{ hash_ptr=pedersen_ptr, ec_op_ptr=starkcurve_ptr}(&R, s, &X, 2, &message, 3);
-    
+    let res:felt=Verif_Musig2_all{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R, s, &X, 2, &message, 3);
+      %{ print("Musig2 verification result=", memory[ap-1]) %}//result of signature
+  
     return();
 }
 

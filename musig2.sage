@@ -1,8 +1,8 @@
 ##*************************************************************************************/
-##/* Copyright (C) 2	022 - Renaud Dubois - This file is part of cy_lib project	 */
+##/* Copyright (C) 2022 - Renaud Dubois - This file is part of cy_lib project	 */
 ##/* License: This software is licensed under a dual BSD and GPL v2 license. 	 */
 ##/* See LICENSE file at the root folder of the project.				 */
-##/* FILE: cy_hybridsig.h							         */
+##/* FILE: musig2.sage							         */
 ##/* 											 */
 ##/* 											 */
 ##/* DESCRIPTION: 2 round_multisignature Musig2 signatures verification smart contract*/
@@ -17,35 +17,56 @@
 def StringToHex(String):
 	return String.encode('utf-8').hex();
 
-def Hexa_from_Point(comment, Point):
+def CairoDeclare_from_Point(comment, Point):
 	print("local ", comment,":(felt, felt)=(", hex(Point[0]), ",",hex(Point[1]),");");
 	return 0;
 
-p = p=2^251+17*2^192+1     
-is_prime(p); #should return true
-beta = 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89
-Fp=GF(p)
-Stark_curve=EllipticCurve(Fp, [1, beta])
-Stark_order=0x800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f
-GEN_X = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca;
-GEN_Y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f;
-Generator=Stark_curve([GEN_X, GEN_Y]); 
-Stark_order*Generator  #this should be equal to (0,1,0) (infty point)
+def CairoDeclare_from_sacalar(comment, Scalar):
+	print("local ", comment,":(felt)=(", hex(Scalar), ");");
+	return 0;
 
-R=7*Generator;## (0x743829e0a179f8afe223fc8112dfc8d024ab6b235fd42283c4f5970259ce7b7, 0xe67a0a63cc493225e45b9178a3375596ea2a1d7012628a328dbc14c78cd1b7)
-Hexa_from_Point("R:",R);
 
-X=12*Generator;##dummy value for debug
+# this function produces a test vector for the Musig 2 core functions i.e veryfing g^s=XR^c
+# the values are dummy values only aimed at validating the Musig2_Verif_core function
+# the hash value is considered as Random Oracle output instead of true hash
+def Product_Test_Vector_MusigCore(curve_characteristic, curve_a, curve_b, Gx, Gy, curve_Order, index):
+	Fp=GF(curve_characteristic); 				#Initialize Prime field of Point
+	Fq=GF(curve_Order);					#Initialize Prime field of scalars
+	Curve=EllipticCurve(Fp, [curve_a, curve_b]);		#Initialize Elliptic curve
+	c=lift(Fq.random_element());					#Consider hash as random oracle
+	s=lift(Fq.random_element());	
+	curve_Generator=Curve([Gx, Gy]); 				
+	Gpows=s*curve_Generator;
+	
+	R=Curve.random_element();
+	Rpowc=c*R;
+		
+	X=Gpows-Rpowc;						#Producing X compliant with validity formulae 
+	
+	CairoDeclare_from_Point("X_"+index+":",X);
+	CairoDeclare_from_Point("R_"+index+":",R);
+	CairoDeclare_from_sacalar("s_"+index+":",s);
+	CairoDeclare_from_sacalar("c_"+index+":",s);
+	
+	return 0;
 
-Hexa_from_Point("X:",X);
+#Produce the test vectors using Stark Curve as defined at https://docs.starkware.co/starkex/stark-curve.html
+#order extracted elsewhere, can be checked by order*Generator=infty point
 
-S=5;
-GpowS=S*Generator;##dummy value for test
-Hexa_from_Point("g_pow_S:",GpowS);
+def Gen_Testvector_Stark_Musig2(nb_vectors):
+	p = p=2^251+17*2^192+1     
+	is_prime(p); #should return true
+	beta = 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89
+	Stark_order=0x800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f
+	GEN_X = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca;
+	GEN_Y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f;
+	for index in [1..nb_vectors]:	
+		Product_Test_Vector_MusigCore(p,1, beta, GEN_X, GEN_Y, Stark_order, str(index) );
+	return 0;
 
-user1=9*Generator;
-Hexa_from_Point("User1:",user1);
+Gen_Testvector_Stark_Musig2(2);
 
-user2=11*Generator;
-Hexa_from_Point("User2:",user2);
+
+
+
 
