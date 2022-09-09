@@ -10,9 +10,11 @@
 ##/* https:##eprint.iacr.org/2020/1261.pdf             				 */
 ##/* note that some constant aggregating values could be precomputed			 */
 ##**************************************************************************************/
-##** sagemath is a usefull algebraic toolbox, you may install it or run directly the following lines without the "## comments" in https:##sagecell.sagemath.org/
-## Stark curve parameters extracted from https:##github.com/starkware-libs/cairo-lang/blob/master/src/starkware/cairo/common/ec.cairo
+## Stark curve parameters extracted from
+## https:github.com/starkware-libs/cairo-lang/blob/master/src/starkware/cairo/common/ec.cairo
 
+#/* global variable defining the number of felt composing the input signature message*/
+global_sizemessage=3
 
 def StringToHex(String):
 	return String.encode('utf-8').hex();
@@ -22,13 +24,17 @@ def CairoDeclare_from_Point(comment, Point):
 	return 0;
 
 def CairoDeclare_from_sacalar(comment, Scalar):
-	print("local ", comment,":(felt)=(", hex(Scalar), ");");
+	print("local ", comment,":felt=", hex(Scalar), ";");
 	return 0;
 
+
+
+#### Product_Test_Vector_MusigCore
 
 # this function produces a test vector for the Musig 2 core functions i.e veryfing g^s=XR^c
 # the values are dummy values only aimed at validating the Musig2_Verif_core function
 # the hash value is considered as Random Oracle output instead of true hash
+
 def Product_Test_Vector_MusigCore(curve_characteristic, curve_a, curve_b, Gx, Gy, curve_Order, index):
 	Fp=GF(curve_characteristic); 				#Initialize Prime field of Point
 	Fq=GF(curve_Order);					#Initialize Prime field of scalars
@@ -38,17 +44,27 @@ def Product_Test_Vector_MusigCore(curve_characteristic, curve_a, curve_b, Gx, Gy
 	curve_Generator=Curve([Gx, Gy]); 				
 	Gpows=s*curve_Generator;
 	
-	R=Curve.random_element();
-	Rpowc=c*R;
+	X=Curve.random_element();
+	Xpowc=c*X;
 		
-	X=Gpows-Rpowc;						#Producing X compliant with validity formulae 
+	R=Gpows-Xpowc;						#Producing X compliant with validity formulae 
 	
-	CairoDeclare_from_Point("X_"+index+":",X);
-	CairoDeclare_from_Point("R_"+index+":",R);
-	CairoDeclare_from_sacalar("s_"+index+":",s);
-	CairoDeclare_from_sacalar("c_"+index+":",s);
+	print("local message:(felt, felt,felt)=(", lift(Fq.random_element()), ",", lift(Fq.random_element()), ",",lift(Fq.random_element()),");");
+	
+        #print("local message:(felt, felt, felt)=(",s ,",", s , "," , s ,");" );
+        #print("local message:(felt, felt, felt)=" );
+        
+	CairoDeclare_from_Point("X_"+index,X);
+	CairoDeclare_from_Point("R_"+index,R);
+	CairoDeclare_from_sacalar("s_"+index,s);
+	CairoDeclare_from_sacalar("c_"+index,c);
+	
+	#verify compliance
+	print (Gpows==R+Xpowc);
 	
 	return 0;
+
+#### Gen_Testvector_Stark_Musig2
 
 #Produce the test vectors using Stark Curve as defined at https://docs.starkware.co/starkex/stark-curve.html
 #order extracted elsewhere, can be checked by order*Generator=infty point
@@ -64,7 +80,9 @@ def Gen_Testvector_Stark_Musig2(nb_vectors):
 		Product_Test_Vector_MusigCore(p,1, beta, GEN_X, GEN_Y, Stark_order, str(index) );
 	return 0;
 
-Gen_Testvector_Stark_Musig2(2);
+
+#### MAIN
+Gen_Testvector_Stark_Musig2(1);
 
 
 
