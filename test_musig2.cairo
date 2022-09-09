@@ -39,6 +39,9 @@ func vec_test_all{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
 
  local message:(felt, felt, felt)=(0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x70617220756e652062616e6465206465206cc3a967696f6e6e61697265732021,
        0x70617220756e652062616e6465206465206cc3a967696f6e6e61697265732021);
+ let hachi:felt=hash2{ hash_ptr=pedersen_ptr}(message[0], message[1]);
+   %{ print("Musig2 hash result=", memory[ap-1]) %}//result of hash h(m(0),m(1))
+        
  local R: (felt, felt) = (0x743829e0a179f8afe223fc8112dfc8d024ab6b235fd42283c4f5970259ce7b7, 0xe67a0a63cc493225e45b9178a3375596ea2a1d7012628a328dbc14c78cd1b7);
     
   
@@ -60,6 +63,8 @@ func vec_test_core{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(flag_
  local  c :felt= 0x11c5b5d5b8150b8cf28f57bc295a0962bd54f1ee08f4bcc441b2c47d009ab6a ;
 
  let d:felt=Verif_Musig2_core{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R, s, &X, c);
+
+
  return (flag_verif=d);  
 }
 
@@ -72,6 +77,9 @@ func main{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
     
      %{ print("Musig2 verification result=", memory[ap-1]) %}//result of signature
      %{ if(memory[ap-1]==1):print("Success!") %}//result of signature
+     
+     let flag2=vec_test_all{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+   
      
      return();
 }
