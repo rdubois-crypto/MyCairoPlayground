@@ -28,7 +28,7 @@ from musig2 import HSig, Verif_Musig2_core, Verif_Musig2_all
 func vec_test_all{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
     alloc_locals;
     
-    // Get the value of the fp register.
+    // Get the value of the fp register.	
  let (__fp__, _) = get_fp_and_pc();
    
  local  X :(felt, felt)=( 0x76fc80c2ffe50db728abe66c5863042e6eca6fc0eacc906ead1f18d12645ce8 , 0x1c2007ab8300692fb3042a8b9ebb1ffbe532d3d7e60684b58df2fc2165b52b1 );
@@ -36,16 +36,17 @@ func vec_test_all{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
  local  s :felt= 0x398bc516a144ac8867348cd7d5517d3dc6a4cd53fd4359c4aad6f47382635ea ;
  local  c :felt= 0x6a18d4ab6a7aa9ba01cabf4d8580f7b6318a7523d49a080df1801d171d66419 ;
 
+ local message:(felt, felt)=(0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x617220756e643262616e6465206465206cc3a967696f6e6e61697265732013);
 
- local message:(felt, felt, felt)=(0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x70617220756e652062616e6465206465206cc3a967696f6e6e61697265732021,
-       0x70617220756e652062616e6465206465206cc3a967696f6e6e61697265732021);
+  %{ print("Musig2 pre hash =", memory[ap-1]) %}//result of hash h(m(0),m(1))
+  
  let hachi:felt=hash2{ hash_ptr=pedersen_ptr}(message[0], message[1]);
    %{ print("Musig2 hash result=", memory[ap-1]) %}//result of hash h(m(0),m(1))
         
  local R: (felt, felt) = (0x743829e0a179f8afe223fc8112dfc8d024ab6b235fd42283c4f5970259ce7b7, 0xe67a0a63cc493225e45b9178a3375596ea2a1d7012628a328dbc14c78cd1b7);
     
   
- let res:felt=Verif_Musig2_all{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R, s, &X, &message, 3);
+// let res:felt=Verif_Musig2_all{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R, s, &X, &message, 3);
       %{ print("Musig2 verification result=", memory[ap-1]) %}//result of signature
   
     return();
@@ -66,6 +67,27 @@ func vec_test_core{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(flag_
 
 
  return (flag_verif=d);  
+}
+
+// vec_test_pedersen_hash
+//unitary vector test generated with pedersen_hashpoint.sage
+func vec_test_pedersen_hash{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(test_res:felt) {
+ alloc_locals;
+ let (__fp__, _) = get_fp_and_pc();
+ local expected :felt=1507473129754433389303589648688410091651017934427319142210890580198758665242;
+ local d=1;//KO
+ 
+ let message:(felt, felt)=(0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x617220756e643262616e6465206465206cc3a967696f6e6e61697265732013);
+
+  %{ print("Musig2 pre hash =", memory[ap-1]) %}//result of hash h(m(0),m(1))
+  
+ let hachi:felt=hash2{ hash_ptr=pedersen_ptr}(message[0], message[1]);
+   %{ print("Musig2 hash result=", memory[ap-1]) %}//result of hash h(m(0),m(1))
+ if(hachi==expected){
+  d=0;//OK
+ }
+ 
+ return (test_res=d); //there is no OK const	
 }
 
 //////////// MAIN

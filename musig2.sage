@@ -13,8 +13,7 @@
 ## Stark curve parameters extracted from
 ## https:github.com/starkware-libs/cairo-lang/blob/master/src/starkware/cairo/common/ec.cairo
 
-#/* global variable defining the number of felt composing the input signature message*/
-global_sizemessage=3
+load('pedersen_hashpoint.sage');
 
 def StringToHex(String):
 	return String.encode('utf-8').hex();
@@ -62,7 +61,7 @@ def Product_Test_Vector_MusigCore(curve_characteristic, curve_a, curve_b, Gx, Gy
 	#verify compliance
 	print (Gpows==R+Xpowc);
 	
-	return 0;
+	return [R,s,X,c];
 
 #### Gen_Testvector_Stark_Musig2
 
@@ -77,12 +76,23 @@ def Gen_Testvector_Stark_Musig2(nb_vectors):
 	GEN_X = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca;
 	GEN_Y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f;
 	for index in [1..nb_vectors]:	
-		Product_Test_Vector_MusigCore(p,1, beta, GEN_X, GEN_Y, Stark_order, str(index) );
-	return 0;
+		[R,s,X,c]=Product_Test_Vector_MusigCore(p,1, beta, GEN_X, GEN_Y, Stark_order, str(index) );
+	return [R,s,X,c];
 
 
+#verify compliance
+def Musig_Verif_Core(Curve, curve_Generator,R,s,X, c):
+	Gpows=s*curve_Generator;
+	Xpowc=c*X;
+	
+	return (Gpows==R+Xpowc);
+	
 #### MAIN
-Gen_Testvector_Stark_Musig2(1);
+[Curve,curve_Generator, P0, P1, P2, P3, Shift]=Init_Stark(curve_characteristic,1, beta,GEN_X, GEN_Y,Stark_order);
+[R,s,X,c]=Gen_Testvector_Stark_Musig2(1);
+print("Verification:", Musig_Verif_Core(Curve, curve_Generator,R,s,X, c));
+
+
 
 
 
