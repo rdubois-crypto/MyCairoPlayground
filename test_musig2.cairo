@@ -18,7 +18,7 @@ from starkware.cairo.common.cairo_builtins import EcOpBuiltin, HashBuiltin, Sign
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.ec import StarkCurve, ec_add, ec_mul, ec_sub, is_x_on_curve, recover_y
 from starkware.cairo.common.ec_point import EcPoint
-from starkware.cairo.common.hash_state import  hash_init,  hash_update, hash_finalize , HashState
+from starkware.cairo.common.hash_state import  hash_init,  hash_update, hash_finalize , HashState, hash_felts
 from starkware.cairo.common.hash import hash2
 from musig2 import HSig, Verif_Musig2_core, Verif_Musig2_all
 
@@ -75,34 +75,77 @@ func vec_test_pedersen_hash{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}(
  alloc_locals;
  let (__fp__, _) = get_fp_and_pc();
  local expected :felt=1507473129754433389303589648688410091651017934427319142210890580198758665242;
- local d=1;//KO
+ local d;
  
  let message:(felt, felt)=(0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x617220756e643262616e6465206465206cc3a967696f6e6e61697265732013);
 
-  %{ print("Musig2 pre hash =", memory[ap-1]) %}//result of hash h(m(0),m(1))
-  
  let hachi:felt=hash2{ hash_ptr=pedersen_ptr}(message[0], message[1]);
    %{ print("Musig2 hash result=", memory[ap-1]) %}//result of hash h(m(0),m(1))
  if(hachi==expected){
-  d=0;//OK
+  d=1;//warning:OK is one
  }
  
  return (test_res=d); //there is no OK const	
 }
 
+
+// vec_test_pedersen_hash
+//unitary vector test generated with pedersen_hashpoint.sage
+//h(h(h(0, x1), x2), 2)
+func vec_test_pedersen_hash_felts{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(test_res:felt) {
+ alloc_locals;
+ let (__fp__, _) = get_fp_and_pc();
+ local expected :felt=2782949571272047847418452244933652681923153427435107168660157281737758615001;//extracted from pedersen_hashpoint.sage result
+ local d;
+ 
+ local message:(felt, felt)=(0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x617220756e643262616e6465206465206cc3a967696f6e6e61697265732013);
+
+ let hachi:felt=hash_felts{ hash_ptr=pedersen_ptr}(&message[0],2);
+   %{ print("hash_felts=", memory[ap-1]) %}//result of hash h(m(0),m(1))
+ if(hachi==expected){
+  d=1;//warning:OK is one
+ }
+ 
+ return (test_res=d); //there is no OK const	
+}
+
+
 //////////// MAIN
 func main{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
-    
-    let flag=vec_test_core{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
-    
-     %{ print("Musig2 verification result=", memory[ap-1]) %}//result of signature
-     %{ if(memory[ap-1]==1):print("Success!") %}//result of signature
+     %{ print("\n\n********************************************************* \n*******************CAIRO:Musig2 verification module testing") %}//result of signature
+
+//    Testing Unitary hash
+     %{ print("\n******************* Unitary Test 1") %}
      
-     let flag2=vec_test_all{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     let flag2=vec_test_pedersen_hash{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     %{ print("hash2:", memory[ap-1],":") %}//result of signature
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of hash comparizon to vector reference
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
+     %{ if(memory[ap-1]!=1):exit() %}//result of signature
+     
+//    Testing Chain hash     
+     %{ print("\n******************* Unitary Test 2") %}
+     %{ print("Verif_hash_chain_core:", memory[ap-1],":") %}//result of hash chain
+     let flag_test3=vec_test_pedersen_hash_felts{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of signature
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
+     %{ if(memory[ap-1]!=1):exit() %}//result of signature
+     
+//    Testing Verification Core
+     %{ print("\n******************* Unitary Test 3") %}
+     
+     %{ print("Verif_Musig2_core:", memory[ap-1],":") %}//result of signature
+     let flag=vec_test_core{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of signature
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
+     %{ if(memory[ap-1]!=1):exit() %}//result of signature
+     
+     
+     %{ print("\nAll test OK") %}//result of signature
+  
    
-     
      return();
 }
 

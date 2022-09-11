@@ -105,8 +105,11 @@ message=[0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x617
 [Curve,curve_Generator, P0, P1, P2, P3, Shift]=Init_Stark(curve_characteristic,1, beta,GEN_X, GEN_Y,Stark_order) ;
 
 #computing test vector for testing Cairo implementation of pedersen hash:
+
+
+print("\n\n********************************************************* \n*******************SAGEMATH:Pedersen hash and chain hash test_vector generation\n");
 pedersen_hash_res=pedersen(message[0], message[1]); #1507473129754433389303589648688410091651017934427319142210890580198758665242
-print("Result of hash=",pedersen_hash_res);
+print("Result of hash       :",pedersen_hash_res);
 
 print("Result of hash chain : h(h(h(0, x1), x2), 2)=",pedersen_hash(message,2));
 

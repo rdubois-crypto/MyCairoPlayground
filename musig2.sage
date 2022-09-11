@@ -88,10 +88,19 @@ def Musig_Verif_Core(Curve, curve_Generator,R,s,X, c):
 	return (Gpows==R+Xpowc);
 	
 #### MAIN
+
+print("\n\n********************************************************* \n*******************SAGEMATH:Musig2 test_vector generation\n");
+
 [Curve,curve_Generator, P0, P1, P2, P3, Shift]=Init_Stark(curve_characteristic,1, beta,GEN_X, GEN_Y,Stark_order);
 [R,s,X,c]=Gen_Testvector_Stark_Musig2(1);
-print("Verification:", Musig_Verif_Core(Curve, curve_Generator,R,s,X, c));
+flag=Musig_Verif_Core(Curve, curve_Generator,R,s,X, c);
+print("Verification:", flag);
+if (flag==True):
+	print("\nTest Vector Generation Success");
+else:
+	print("\nTest Vector GenerationFailure");	
 
+print("\n*********************************************************\n");
 
 
 
