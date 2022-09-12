@@ -65,12 +65,6 @@ def Gen_Testvector_Stark_Musig2(nb_vectors):
 	return [R,s,X,c];
 
 
-#verify compliance
-def Musig_Verif_Core(Curve, curve_Generator,R,s,X, c):
-	Gpows=s*curve_Generator;
-	Xpowc=c*X;
-	
-	return (Gpows==R+Xpowc);
 	
 ########### MAIN
 message=[0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x617220756e643262616e6465206465206cc3a967696f6e6e61697265732013];

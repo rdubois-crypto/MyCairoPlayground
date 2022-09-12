@@ -33,7 +33,7 @@ def Musig2_KeyGen(Curve, curve_generator, curve_order):
 	privatekey=int(Fq.random_element());
 	publickey=curve_generator*privatekey;
 	
-	return [int(privatekey), publickey]
+	return [int(privatekey), publickey];
 	#return 0;
 	
 ### H_aggregate = pedersen_hash_state(L||X)
@@ -106,8 +106,14 @@ def Musig2_Sign_Round2_all(
 		s=s+vec_nonces[j]*b^j
 	return [R,s, c];
 	
-	
 
+#verify compliance
+def Musig_Verif_Core(Curve, curve_Generator,R,s,X, c):
+	Gpows=s*curve_Generator;
+	Xpowc=c*X;
+	
+	return (Gpows==R+Xpowc);
+	
 #stark curve parameters from https://docs.starkware.co/starkex/stark-curve.html
 
 curve_characteristic=2^251+17*2^192+1     
