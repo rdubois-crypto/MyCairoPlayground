@@ -51,7 +51,7 @@ for i in [0..nb_users-1]:
 
 	
 print("\n*******************Aggregating Public Keys:\n");
-KeyAgg=Musig2_KeyAggCoeff(Curve, curve_Generator, L, nb_users);
+KeyAgg=Musig2_KeyAgg(Curve, curve_Generator, L, nb_users);
 print("Aggregated Key:", KeyAgg);
 
 print("\n*******************Signature Round1:\n");
@@ -60,13 +60,14 @@ infty_point=0*curve_Generator;
 Aggregated_Ri=[1..nb_users];
 nonces_i=[1..nb_users];	##of course nonces are kept secret by users(simulation convenience)
 
-for i in [0..nb_users-1]:
-	Aggregated_Ri[i]=infty_point;
-	
+for j in [0..nb_users-1]:
+	Aggregated_Ri[j]=infty_point;
+
+		
 for i in [0..nb_users-1]:
 	X_pub=Curve(L[2*i], L[2*i+1]);
-	[nonces_i[i], Ri]=Musig2_Sign_Round1(Stark_order, nb_users,X_pub);	#compute i-th contribution
-	for j in [0..nb_users-1]:				#sum the contribution to previous ones
+	[nonces_i[i], Ri]=Musig2_Sign_Round1(Stark_order, nb_users,curve_Generator);	#compute i-th contribution
+	for j in [0..nb_users-1]:							#sum the contribution to previous ones
 		Aggregated_Ri[j]+=Ri[j];
 
 print("Aggregated Signature=", Aggregated_Ri);	
@@ -76,7 +77,7 @@ s_part=Fq(0);
 
 for i in [0..nb_users-1]:
 	vec_nonces=nonces_i[i];
-	ai=H_agg(L, nb_users, L[2*i], L[2*i+1]);
+	ai=H_agg(L, i, L[2*i], L[2*i+1]);
 	
 	#print("vec:", vec_nonces, Fq(vec_nonces[0]));
 	[R,s, c]=Musig2_Sign_Round2_all( 

@@ -67,24 +67,24 @@ def H_sig(Xtilde, R, m, size_message):
 
 ###Computation of sum Pki^ai, ai=H(L, X_i)
 # expected public keys format is (int, int)
-def Musig2_KeyAggCoeff(Curve, curve_generator, L, n_users):
+def Musig2_KeyAgg(Curve, curve_generator, L, n_users):
 	sum=0*curve_generator;				# initiate sum at infty_point
 	for i in [0..n_users-1]:
-		ai=H_agg(L, n_users, L[2*i], L[2*i+1]);#i-th ai
+		ai=H_agg(L, i, L[2*i], L[2*i+1]);#i-th ai
 		sum=sum+ai*Curve(L[2*i], L[2*i+1]);	#Xi^ai, where Xi is the ith public key
 	return sum;
 
 
 ### Round1 from single signer view
 # expected public key as a point
-def Musig2_Sign_Round1(curve_order, n_users,X_pub):
+def Musig2_Sign_Round1(curve_order, n_users,curve_Generator):
 	Fq=GF(curve_order);	
 	Rijs_Round1=[1..n_users];
 	nonces=[1..n_users];
 	
 	for j in [0..n_users-1]:
 		nonces[j]=int(Fq.random_element());
-		Rijs_Round1[j]=nonces[j]*X_pub
+		Rijs_Round1[j]=nonces[j]*curve_Generator;     #Rij=rij*G;
 	
 	return [nonces, Rijs_Round1];	
 	
