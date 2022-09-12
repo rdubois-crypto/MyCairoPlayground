@@ -92,27 +92,6 @@ def ecdsa_verif(Curve, curve_generator, curve_order, Kpub, r, s, hash):
 	R=u1*curve_generator+u2*Kpub;
 	return int(R[0])==r;
 	
-########### MAIN
-#stark curve parameters from https://docs.starkware.co/starkex/stark-curve.html
-
-curve_characteristic=2^251+17*2^192+1     
-is_prime(curve_characteristic); #should return true
-beta = 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89
-Stark_order=0x800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f
-GEN_X = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca;
-GEN_Y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f;	
-message=[0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x617220756e643262616e6465206465206cc3a967696f6e6e61697265732013];
-[Curve,curve_Generator, P0, P1, P2, P3, Shift]=Init_Stark(curve_characteristic,1, beta,GEN_X, GEN_Y,Stark_order) ;
-
-#computing test vector for testing Cairo implementation of pedersen hash:
-
-
-print("\n\n********************************************************* \n*******************SAGEMATH:Pedersen hash and chain hash test_vector generation\n");
-pedersen_hash_res=pedersen(message[0], message[1]); #1507473129754433389303589648688410091651017934427319142210890580198758665242
-print("Result of hash       :",pedersen_hash_res);
-
-print("Result of hash chain : h(h(h(0, x1), x2), 2)=",pedersen_hash(message,2));
-
 
 
 
