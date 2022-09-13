@@ -11,9 +11,12 @@ compile_n_run:
 # modify nb_users to choose the size of the system (current=3 users)
 # modify size_message to select a different message size
 # modify seed value to generate different test vectors (fixed to ease debug)
+# modify _MU value to increase the vector size (related to security):
+#   as specified:  _MU=2
+#   conservative: _MU=4
 
 example:
-	sage -c 'nb_users=3; size_message=2;seed=0;load("test_musig2_example.sage")'; 
+	sage -c '_MU=2;nb_users=10; size_message=2;seed=0;load("test_musig2_example.sage")'; 
 
 testvec:
 	sage testvector_gen_musig2.sage

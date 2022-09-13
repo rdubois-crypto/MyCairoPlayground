@@ -35,13 +35,20 @@ set_random_seed(seed)
 
 	
 ##***********************hash functions*******************************************/
-	
+# The following constants are used for domain separation of the H_agg, H_nonce and H_sig functions
+# (No oracle from one can provide oracle for the other)
+_SEPARATION_AGG=1
+_SEPARATION_NON=2
+_SEPARATION_SIG=3
+
+		
 ### H_aggregate = pedersen_hash_state(L||X)
 # expected public keys format is (int, int)
 def H_agg(Coefficients, n_users, Xx, Xy, curve_order):
 	Fq=GF(curve_order);
 	#concatenate L with X, each public key is represented as a couple of felt
-	Input=Coefficients+[Xx, Xy];			#Append X to L
+	Input=[_SEPARATION_AGG];			#separating the domains
+	Input+=Coefficients+[Xx, Xy];			#Append X to L
 	Hagg=pedersen_hash(Input, 2*(n_users+1));	#H(L||X)
 	return int(Fq(Hagg));
 
@@ -49,24 +56,24 @@ def H_agg(Coefficients, n_users, Xx, Xy, curve_order):
 #Xtilde is the public key aggregation computed at first round
 def H_non(KeyAgg, nb_users, vec_R, message, size_message, curve_order):
 	#concatenate L with X, each public key is represented as a couple of felt
-	Input_hash=[int(KeyAgg[0]), int(KeyAgg[1])];			#Append X, Ris and m
+	Input_hash=[_SEPARATION_NON];#separating the domains
+	Input_hash+=[int(KeyAgg[0]), int(KeyAgg[1])];			#Append X, Ris and m
 	Fq=GF(curve_order);
-	print("***** message:",message);
 	
-	for j in [0..nb_users-1]:
+	for j in [0.._MU-1]:
 		Input_hash=Input_hash+[int(vec_R[j][0]), int(vec_R[j][1])];
 		
 	for i in [0..size_message-1]:
 		Input_hash=Input_hash+[message[i]];
-	print("\n ******** Input to Non:",Input_hash);
 	
-	Hnon=pedersen_hash(Input_hash, 2*(nb_users+1)+size_message);	#H(L||X)
+	Hnon=pedersen_hash(Input_hash, 2*(_MU+1)+size_message);	#H(L||X)
 	
 	return int(Fq(Hnon));
 
 def H_sig(KeyAgg, R, m, size_message, curve_order):
 	Fq=GF(curve_order);
-	Input=[int(KeyAgg[0]), int(KeyAgg[1])];
+	Input=[_SEPARATION_SIG];#separating the domains
+	Input+=[int(KeyAgg[0]), int(KeyAgg[1])];
 	Input+=[int(R[0]), int(R[1])];
 	for cpt_i in [0..size_message-1]:
 		Input=Input+[m[cpt_i]];
@@ -89,13 +96,13 @@ def Musig2_KeyAgg(Curve, curve_generator, L, n_users, curve_order):
 #input is n_users vector of size v
 def Musig2_Sig1Agg(vec_Ri):
 	infty_point=0*curve_Generator;
-	Aggregated_Ri=[0..nb_users-1];
+	Aggregated_Ri=[0.._MU-1];
 	
-	for j in [0..nb_users-1]:
+	for j in [0.._MU-1]:
 		Aggregated_Ri[j]=infty_point;
 	
 	for i in [0..nb_users-1]:
-		for j in [0..nb_users-1]:#sum the contribution to previous ones
+		for j in [0.._MU-1]:#sum the contribution to previous ones
 			Aggregated_Ri[j]+=vec_Ri[i][j];	
 	return Aggregated_Ri;
 	
@@ -123,10 +130,10 @@ def Musig2_KeyGen(Curve, curve_generator, curve_order):
 # in a practical version, random element shall be replaced by rfc6979 adaptation
 def Musig2_Sign_Round1(curve_order, n_users,curve_Generator):
 	Fq=GF(curve_order);	
-	Ri=[0..n_users-1];
+	Ri=[0.._MU-1];
 	nonces=[0..n_users-1];
 	
-	for j in [0..n_users-1]:
+	for j in [0.._MU-1]:
 		nonces[j]=int(Fq.random_element());
 		Ri[j]=nonces[j]*curve_Generator;     #Rij=rij*G;
 	
@@ -140,13 +147,13 @@ def Musig2_Sign_Round2_all(
 		message,  message_feltlength):			#input message
 	Fq=GF(curve_order);
 	b=H_non(KeyAgg, nb_users, vec_R, message,  message_feltlength, curve_order);
-	print("b=",b);
+	
 	R=0*curve_generator;
-	for j in [0..nb_users-1]:
+	for j in [0.._MU-1]:
 		R=R+(b^(j)*vec_R[j]) ;
 	c=(H_sig(KeyAgg, R, message, message_feltlength, curve_order));
 	s=(c*ai*privatekey_xi);
-	for j in [0..nb_users-1]:
+	for j in [0.._MU-1]:
 		s=s+(vec_nonces[j])*Fq(b)^j;
 	return [R,s, c];
 
@@ -155,7 +162,7 @@ def Musig2_Sign_Round2_all(
 def Musig_Verif_Core(Curve, curve_Generator,R,s,KeyAgg, c):
 	Gpows=s*curve_Generator;
 	Xpowc=c*KeyAgg;
-	#print("\nGpows=", Gpows, "\nXpowc=", Xpowc, "\nR+Xpowc=",R+Xpowc);
+	#("\nGpows=", Gpows, "\nXpowc=", Xpowc, "\nR+Xpowc=",R+Xpowc);
 	
 	return (Gpows==R+Xpowc);
 	

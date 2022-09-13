@@ -2,7 +2,7 @@
 ##/* Copyright (C) 2022 - Renaud Dubois - This file is part of cy_lib project	 */
 ##/* License: This software is licensed under a dual BSD and GPL v2 license. 	 */
 ##/* See LICENSE file at the root folder of the project.				 */
-##/* FILE: test_musig2.sage							             	  */
+##/* FILE: test_musig2.sage						             	  */
 ##/* 											  */
 ##/* 											  */
 ##/* DESCRIPTION: 2 round_multisignature Musig2 signatures 				  */
@@ -10,10 +10,11 @@
 ##/* This file emulates a n-users aggregation and signatures, n being an input of sage */
 
 ##/* https:##eprint.iacr.org/2020/1261.pdf             				  */
-##/* note that some constant aggregating values could be precomputed			  */
 ##**************************************************************************************/
 
-#todo: prefix by vec any vector of size n_users
+#note that the program expects the following value to be defined (currently done by makefile)
+#to execute independtly, uncomment the following line:
+#_MU=4;nb_users=3; size_message=2;seed=0;
 
 load('musig2.sage');
 
@@ -21,6 +22,8 @@ load('musig2.sage');
 print("\n\n********************************************************* \n*******************SAGEMATH:Simulation of a full Sign/Verif of Musig2:\n");
 print("Simulation for a set of users of size:", nb_users);
 
+
+##***********************IO functions**********************************************/
 print("\n*******************Generating Message of size",size_message,":\n");
 Fq=GF(Stark_order);
 message=[0..size_message-1];
@@ -28,6 +31,8 @@ for i in [0..size_message-1]:
 	message[i]=int(Fq.random_element());
 print(message);
 
+
+##***********************Key Generation and Aggregate******************************/
 
 print("\n*******************Generating Keys:\n");
 L=[];
@@ -56,6 +61,8 @@ print("\n*******************Aggregating Public Keys:\n");
 KeyAgg=Musig2_KeyAgg(Curve, curve_Generator, L, nb_users, Stark_order);
 print("Aggregated Key:", KeyAgg);
 
+
+##***********************Round 1 functions******************************/
 print("\n*******************Signature Round1:\n");
 infty_point=0*curve_Generator;
 
@@ -75,23 +82,25 @@ print("All nonces:",vec_nonces);
 print("Aggregated Signature=", vec_Rj);	
 
 	
+##***********************Round 2 functions******************************/
 print("\n*******************Signature Round2:\n");
 
 vec_s=[0..nb_users-1];
 
 for i in [0..nb_users-1]:
-	print("\n***** User");
+	print("\n***** User",i);
 	[R,vec_s[i], c]=Musig2_Sign_Round2_all( 
 		Curve, curve_Generator,Stark_order, nb_users, KeyAgg,#common parameters
 		vec_a[i], secrets[i],					#user's data
 		vec_R, vec_nonces[i],				#First round output
 		message,  size_message);
-	print(i,R, vec_s[i], c)	
+	print("s_",i,":", vec_s[i]);
+		
 s=Musig2_Sig2Agg(vec_s);
-	
 	
 print("Final Signature: \n R=", R,"\n s=", s,"\n c=", c);
 
+##***********************Verification functions******************************/
 print("\n*******************Verification :\n");
 
 res_verif=Musig_Verif_Core(Curve, curve_Generator,R,s,KeyAgg, int(c));
