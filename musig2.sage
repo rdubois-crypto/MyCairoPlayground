@@ -132,9 +132,6 @@ def Musig2_Sign_Round1(curve_order, n_users,curve_Generator):
 	
 	return [nonces, Ri];	
 	
-
-
-	
 ### Round2 from single signer view
 def Musig2_Sign_Round2_all( 
 		Curve, curve_generator,curve_order, nb_users, KeyAgg,#common parameters
@@ -152,15 +149,9 @@ def Musig2_Sign_Round2_all(
 	for j in [0..nb_users-1]:
 		s=s+(vec_nonces[j])*Fq(b)^j;
 	return [R,s, c];
-	
+
 
 ##***********************Verifier functions******************************************/
-
-#verify compliance
-def Musig_UnsafeCheck_s(Curve, curve_Generator,s,KeyAgg,c):
-	return 0;
-
-
 def Musig_Verif_Core(Curve, curve_Generator,R,s,KeyAgg, c):
 	Gpows=s*curve_Generator;
 	Xpowc=c*KeyAgg;
