@@ -71,7 +71,7 @@ def  pedersen(a,b):
 # one shot implementation of Starknet chain of hash:
 # hash of sequence (x, y, ..., xn) is h(h(h(h(0, x1), x2), ...), n)
 # as described in source code :cairo-lang/src/starkware/cairo/common/hash_state.cairo 
-# not tested yet
+
 def pedersen_hash(data, data_feltlength):
 	hash=pedersen(0, data[0]); 			#h(0,x1)
 	for i in [1..data_feltlength-1]:		#intermediate hashes

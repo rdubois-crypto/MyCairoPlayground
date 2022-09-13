@@ -8,8 +8,12 @@ compile_n_run:
 	cairo-run --program=test_musig2.json --layout=all
 
 #run a Musig2 aggregation for a set of 'nb_users' size (min=2)
+# modify nb_users to choose the size of the system (current=3 users)
+# modify size_message to select a different message size
+# modify seed value to generate different test vectors (fixed to ease debug)
+
 example:
-	sage -c 'nb_users=3; size_message=2;load("test_musig2_example.sage")'; 
+	sage -c 'nb_users=3; size_message=2;seed=0;load("test_musig2_example.sage")'; 
 
 testvec:
 	sage testvector_gen_musig2.sage
