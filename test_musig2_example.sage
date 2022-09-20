@@ -15,8 +15,11 @@
 #note that the program expects the following value to be defined (currently done by makefile)
 #to execute independtly, uncomment the following line:
 #_MU=4;nb_users=3; size_message=2;seed=0;
-
+from time import time
 load('musig2.sage');
+
+
+#print(system(date));
 
 
 print("\n\n********************************************************* \n*******************SAGEMATH:Simulation of a full Sign/Verif of Musig2:\n");
@@ -97,8 +100,9 @@ for i in [0..nb_users-1]:
 	print("s_",i,":", vec_s[i]);
 		
 s=Musig2_Sig2Agg(vec_s);
-	
+		
 print("Final Signature: \n R=", R,"\n s=", s,"\n c=", c);
+print("With Key Agg:",KeyAgg);
 
 ##***********************Verification functions******************************/
 print("\n*******************Verification :\n");

@@ -23,6 +23,10 @@ from starkware.cairo.common.hash_state import  hash_init,  hash_update, hash_fin
 from starkware.cairo.common.hash import hash2
 
 
+// /** constant for domain separation of musig2
+const _SEPARATION_SIG=1;
+
+
 // /** \brief Hsig, hashing function
 
 // * Implicit:
@@ -41,8 +45,16 @@ from starkware.cairo.common.hash import hash2
 // */
 func HSig{ hash_ptr: HashBuiltin*, ec_op_ptr2: EcOpBuiltin*}(R:felt*, s:felt, X :felt*,  message_ptr: felt*, data_length: felt)->(Hsign:felt){
 	// compute c =·= Hsig(X, R, m ),
+	alloc_locals;
+	let (__fp__, _) = get_fp_and_pc();
+	
 	let (Hsig: HashState*) = hash_init();
-	let Hsig_X: HashState* =hash_update{hash_ptr=hash_ptr}(Hsig, X, 2);// append Aggregated key to hash
+	local const_separation=_SEPARATION_SIG;
+	
+	let Hsig_0: HashState* =hash_update{hash_ptr=hash_ptr}(Hsig, &const_separation, 1);
+	
+	let Hsig_X: HashState* =hash_update{hash_ptr=hash_ptr}(Hsig_0, &X[0], 2);// append Aggregated key to hash
+		
 	let Hsig_XR: HashState* =hash_update{hash_ptr=hash_ptr}(Hsig_X, R, 2);// append R part of sig to hash
 	let Hsig_XRm: HashState* =hash_update{hash_ptr=hash_ptr}(Hsig_XR, message_ptr, data_length);// append message to hash
 	
@@ -94,12 +106,13 @@ func Verif_Musig2_core{ hash_ptr: HashBuiltin*, ec_op_ptr2: EcOpBuiltin*}(R:felt
 // /** \brief The core verification algorithm, computed in one shot (hash internally)
 
 // * Implicit:
-// * \param[in]  R part of the signatures as a couple (x,y) of felt (type: felt*)
-// * \param[in]  s part of the signatures  (type: felt*)
+
 // * Inputs:
 // * \param[in]  R part of the signatures as a couple (x,y) of felt (type: felt*)
 // * \param[in]  s part of the signatures  (type: felt*)
-// * \param[in]  X Aggregated key (x,y) as a couple of felt (type: felt*)
+// * \param[in]  KeyAgg Aggregated key (x,y) as a couple of felt (type: felt*)
+
+
 // * \param[in]  message_ptr, pointer to the message of  data_length felt (type: felt*)
 // * \param[in]  data_length is the length in felt (not byte!) of the message (type: felt*)
 // * Output:
@@ -107,20 +120,23 @@ func Verif_Musig2_core{ hash_ptr: HashBuiltin*, ec_op_ptr2: EcOpBuiltin*}(R:felt
 // * The verification function of [MUSIG2], instanciated with pedersen hash over the Starkcurve. 
 // */
 //
-func Verif_Musig2_all{ hash_ptr: HashBuiltin*, ec_op_ptr2: EcOpBuiltin*}(R:felt*, s:felt, X :felt*,  message_ptr: felt*, data_length: felt) ->(flag_verif:felt){
+func Verif_Musig2_all{ hash_ptr: HashBuiltin*, ec_op_ptr2: EcOpBuiltin*}(R:felt*, s:felt, KeyAgg :felt*,  message_ptr: felt*, data_length: felt) ->(flag_verif:felt){
 	alloc_locals;
 	
 	//cy_ecpoint_t *G=cy_ec_get_generator(ctx->ctx_ec); /* get generating point of the curve , todo ec: coder un get_generator */
-	let ecpoint_G:EcPoint=recover_y(StarkCurve.GEN_X);
+	let ecpoint_G:EcPoint=EcPoint(x=StarkCurve.GEN_X, y=StarkCurve.GEN_Y);
 	//CY_CHECK(cy_ec_scalarmult_fp(ctx->ctx_ec, G, s, &ec_temp1)); 	/*g^s*/
 	let g_pow_s: EcPoint = ec_mul{ec_op_ptr=ec_op_ptr2}(s, ecpoint_G);
-   		
+   	let ecpoint_X: EcPoint = EcPoint(x=KeyAgg[0], y=KeyAgg[1]);
+   	
 	// compute c =·= Hsig(X, R, m ),	
-	let c: felt= HSig(R,s,X, message_ptr, data_length);// get hash result as felt
+	let c: felt= HSig(R,s,KeyAgg, message_ptr, data_length);// get hash result as felt
+	
+ 	%{ print("Musig2  Internal hash =", memory[ap-1]) %}//result of signature
 	local d=c;
 	
-	let ecpoint_R:EcPoint=recover_y(R[0]); // recover R from R.x
-	let ecpoint_X_pow_c:EcPoint=ec_mul{ec_op_ptr=ec_op_ptr2}(d, ecpoint_R);//compute X^c
+	let ecpoint_R: EcPoint = EcPoint(x=R[0], y=R[1]);
+	let ecpoint_X_pow_c:EcPoint=ec_mul{ec_op_ptr=ec_op_ptr2}(d, ecpoint_X);//compute X^c
 	let ecpoint_RXc:EcPoint=ec_add(ecpoint_R, ecpoint_X_pow_c);//compute RX^c
 		
 	//* verifier accepts the signature if gs = RXec*/

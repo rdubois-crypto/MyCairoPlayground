@@ -37,9 +37,9 @@ set_random_seed(seed)
 ##***********************hash functions*******************************************/
 # The following constants are used for domain separation of the H_agg, H_nonce and H_sig functions
 # (No oracle from one can provide oracle for the other)
-_SEPARATION_AGG=1
+_SEPARATION_AGG=3
 _SEPARATION_NON=2
-_SEPARATION_SIG=3
+_SEPARATION_SIG=1
 
 		
 ### H_aggregate = pedersen_hash_state(L||X)
@@ -77,6 +77,8 @@ def H_sig(KeyAgg, R, m, size_message, curve_order):
 	Input+=[int(R[0]), int(R[1])];
 	for cpt_i in [0..size_message-1]:
 		Input=Input+[m[cpt_i]];
+		
+	print("Input to pedersen=",Input, "size=", len(Input));	
 	Hsig=pedersen_hash(Input, len(Input));
 	
 	return int(Fq(Hsig));
