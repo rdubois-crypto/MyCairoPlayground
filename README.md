@@ -18,8 +18,14 @@ You need to have Cairo and Sagemath installed.
 - Sagemath:sudo apt install sagemath
 - thoth : https://github.com/FuzzingLabs/thoth/tree/master/thoth
 
-To compile type >make. The program display the test vectors computation with sage and their 
-execution with Cairo.
+
+To compile type >make. The option of the makefile are:
+- make (default:none) The program writes the test vectors computation in the test_vec.dat file 
+- make example : display the result instead of writing it
+- make compile_n_run : compile and execute the Cairo code of Musig2 verification part (test_vector is hard written in test_musig2.cairo)
+
+
+
 
 To dissassemble, type >make asm (note that thoth is from FuzzingLabs and not guaranteed to be maintained)
 
