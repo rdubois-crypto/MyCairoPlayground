@@ -78,6 +78,10 @@ print("Result of hash       :",pedersen_hash_res);
 
 print("Result of hash chain : h(h(h(0, x1), x2), 2)=",pedersen_hash(message,2));
 
+print("\n\n********************************************************* \n*******************SAGEMATH:Hsig hash for Musig2 test_vector\n");
+
+
+
 #stark curve parameters from https://docs.starkware.co/starkex/stark-curve.html
 
 curve_characteristic=2^251+17*2^192+1     

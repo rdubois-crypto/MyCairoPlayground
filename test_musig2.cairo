@@ -23,34 +23,6 @@ from starkware.cairo.common.hash import hash2
 from musig2 import HSig, Verif_Musig2_core, Verif_Musig2_all
 
 
-//vector test generated with musig2.sage, 
-//hashing is dummy (not yet implemented in external sage) thus test fails (to be completed)
-func vec_test_all{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
-    alloc_locals;
-    
-    // Get the value of the fp register.	
- let (__fp__, _) = get_fp_and_pc();
-   
- local  X :(felt, felt)=( 0x76fc80c2ffe50db728abe66c5863042e6eca6fc0eacc906ead1f18d12645ce8 , 0x1c2007ab8300692fb3042a8b9ebb1ffbe532d3d7e60684b58df2fc2165b52b1 );
- local  R :(felt, felt)=( 0x561d1ada3798e36dc6734c203eee3a5995d97a6db6dad83c89ad24c754499aa , 0x2615a0c492a14a00405a548f1125054704bac52e471b8726c7f19b54cfe41ff );
- local  s :felt= 0x398bc516a144ac8867348cd7d5517d3dc6a4cd53fd4359c4aad6f47382635ea ;
- local  c :felt= 0x6a18d4ab6a7aa9ba01cabf4d8580f7b6318a7523d49a080df1801d171d66419 ;
-
- local message:(felt, felt)=(0x616c6c657a206269656e20766f757320666169726520656e63756c65722021 ,0x617220756e643262616e6465206465206cc3a967696f6e6e61697265732013);
-
-  %{ print("Musig2 pre hash =", memory[ap-1]) %}//result of hash h(m(0),m(1))
-  
- let hachi:felt=hash2{ hash_ptr=pedersen_ptr}(message[0], message[1]);
-   %{ print("Musig2 hash result=", memory[ap-1]) %}//result of hash h(m(0),m(1))
-        
- local R: (felt, felt) = (0x743829e0a179f8afe223fc8112dfc8d024ab6b235fd42283c4f5970259ce7b7, 0xe67a0a63cc493225e45b9178a3375596ea2a1d7012628a328dbc14c78cd1b7);
-    
-  
-// let res:felt=Verif_Musig2_all{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R, s, &X, &message, 3);
-      %{ print("Musig2 verification result=", memory[ap-1]) %}//result of signature
-  
-    return();
-}
 
 
 //unitary vector test generated with musig2.sage
@@ -69,6 +41,50 @@ func vec_test_core{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(flag_
  return (flag_verif=d);  
 }
 
+
+//unitary vector test generated with test_musig2_example.sage
+func vec_test_Musig2_core{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(flag_verif:felt){
+ alloc_locals;
+ let (__fp__, _) = get_fp_and_pc();
+ 
+ local  X :(felt, felt)=( 2691991349280861182525365095645492501799041544647681493267316816575070318625 , 964920030696087922447606943895072427921210732852145972476320138235037406950 );
+ local  R :(felt, felt)=( 1154543393826499327384925594716943854756278752519748612882695342387905476485 , 3198087695386183225673073483228017283558755677681197577257486316144848035013 );
+ local  s :felt= 1082631760734147029776619237951131338486686452862679559365522792258354836851 ;
+ local  c :felt= 1270063422062718958814700756961132487764709718831040164632853007755546300240 ;
+
+ let d:felt=Verif_Musig2_core{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R, s, &X, c);
+
+
+ return (flag_verif=d);  
+}
+
+//Input to Hsig= [1, 2691991349280861182525365095645492501799041544647681493267316816575070318625, 964920030696087922447606943895072427921210732852145972476320138235037406950, 1154543393826499327384925594716943854756278752519748612882695342387905476485, 3198087695386183225673073483228017283558755677681197577257486316144848035013, 1312926488893051640838690020429502555760453277462134805675804440214385331882]
+
+//unitary vector test generated with test_musig2_example.sage
+func vec_test_Hsig{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(test_res:felt){
+ alloc_locals;
+ let (__fp__, _) = get_fp_and_pc();
+ local d;
+ 	
+ local  message:felt=	1312926488893051640838690020429502555760453277462134805675804440214385331882;
+ local  X :(felt, felt)=( 2691991349280861182525365095645492501799041544647681493267316816575070318625 , 964920030696087922447606943895072427921210732852145972476320138235037406950 );
+ local  R :(felt, felt)=( 1154543393826499327384925594716943854756278752519748612882695342387905476485 , 3198087695386183225673073483228017283558755677681197577257486316144848035013 );
+ local  s :felt= 1082631760734147029776619237951131338486686452862679559365522792258354836851 ;
+ local  expected :felt= 1270063422062718958814700756961132487764709718831040164632853007755546300240 ;//expected Hsig
+
+ let hashed:felt=HSig{hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R,s,&X, &message,1);
+  %{ print("Musig2 Hsig =", memory[ap-1]) %}//result of hsig(R,s,X,m)
+  
+ if(hashed==expected){
+  d=1;//warning:OK is one
+ }else{
+  d=0;
+ }
+ 
+ return (test_res=d);  
+}
+
+
 // vec_test_pedersen_hash
 //unitary vector test generated with pedersen_hashpoint.sage
 func vec_test_pedersen_hash{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(test_res:felt) {
@@ -83,6 +99,8 @@ func vec_test_pedersen_hash{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}(
    %{ print("Musig2 hash result=", memory[ap-1]) %}//result of hash h(m(0),m(1))
  if(hachi==expected){
   d=1;//warning:OK is one
+ }else{
+  d=0;
  }
  
  return (test_res=d); //there is no OK const	
@@ -104,9 +122,35 @@ func vec_test_pedersen_hash_felts{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuil
    %{ print("hash_felts=", memory[ap-1]) %}//result of hash h(m(0),m(1))
  if(hachi==expected){
   d=1;//warning:OK is one
+ }else{
+  d=0;
  }
  
  return (test_res=d); //there is no OK const	
+}
+
+
+
+//vector test generated with test_musig2_example.sage, 
+//hashing is dummy (not yet implemented in external sage) thus test fails (to be completed)
+func vec_test_all{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(flag_verif:felt) {
+    alloc_locals;
+    
+    // Get the value of the fp register.	
+ let (__fp__, _) = get_fp_and_pc();
+   
+  
+ 	
+ local  message:felt=	1312926488893051640838690020429502555760453277462134805675804440214385331882;
+ local  X :(felt, felt)=( 2691991349280861182525365095645492501799041544647681493267316816575070318625 , 964920030696087922447606943895072427921210732852145972476320138235037406950 );
+ local  R :(felt, felt)=( 1154543393826499327384925594716943854756278752519748612882695342387905476485 , 3198087695386183225673073483228017283558755677681197577257486316144848035013 );
+ local  s :felt= 1082631760734147029776619237951131338486686452862679559365522792258354836851 ;
+   	  
+ let res:felt=Verif_Musig2_all{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R, s, &X, &message, 1);
+ 
+ %{ print("Musig2  full verification result=", memory[ap-1]) %}//result of signature
+  
+ return (flag_verif=res);  
 }
 
 
@@ -127,20 +171,43 @@ func main{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
      
 //    Testing Chain hash     
      %{ print("\n******************* Unitary Test 2") %}
-     %{ print("Verif_hash_chain_core:", memory[ap-1],":") %}//result of hash chain
      let flag_test3=vec_test_pedersen_hash_felts{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
-     %{ if(memory[ap-1]==1):print("Test OK") %}//result of signature
-     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
+     %{ print("Verif_hash_chain_core:", memory[ap-1],":") %}//result of hash chain
+
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of hash
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of hash
      %{ if(memory[ap-1]!=1):exit() %}//result of signature
      
-//    Testing Verification Core
+//    Testing Hsig     
      %{ print("\n******************* Unitary Test 3") %}
+     let flag_test4=vec_test_Hsig{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     %{ print("Verif_hash_chain_core:", memory[ap-1],":") %}//result of hash chain
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of hash
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of hash
+   
+     	
+     
+//    Testing Verification Core
+     %{ print("\n******************* Unitary Test 4") %}
      
      %{ print("Verif_Musig2_core:", memory[ap-1],":") %}//result of signature
      let flag=vec_test_core{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
      %{ if(memory[ap-1]==1):print("Test OK") %}//result of signature
      %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
      %{ if(memory[ap-1]!=1):exit() %}//result of signature
+     
+      %{ print("Verif_Musig2_core:", memory[ap-1],":") %}//result of signature
+     let flag=vec_test_Musig2_core{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of signature
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
+     %{ if(memory[ap-1]!=1):exit() %}//result of signature
+     
+     
+//    Testing Full Verification 
+     %{ print("\n******************* Unitary Test 5: Full Verification") %}
+     let flag=vec_test_all{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of signature
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
      
      
      %{ print("\nAll test OK") %}//result of signature
