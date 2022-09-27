@@ -123,7 +123,11 @@ def Musig2_KeyGen(Curve, curve_generator, curve_order):
 	Fq=GF(curve_order);
 	privatekey=int(Fq.random_element());
 	publickey=curve_generator*privatekey;
-	
+	#/* compatibility BIP340*/
+	if( (int(publickey[1])&1)==1):#BIP340 compatibility
+		privatekey=curve_order-privatekey;
+		publickey=curve_generator*privatekey;		
+			
 	return [int(privatekey), publickey];
 	
 	
