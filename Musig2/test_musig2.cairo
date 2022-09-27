@@ -20,7 +20,7 @@ from starkware.cairo.common.ec import StarkCurve, ec_add, ec_mul, ec_sub, is_x_o
 from starkware.cairo.common.ec_point import EcPoint
 from starkware.cairo.common.hash_state import  hash_init,  hash_update, hash_finalize , HashState, hash_felts
 from starkware.cairo.common.hash import hash2
-from musig2 import HSig, Verif_Musig2_core, Verif_Musig2_all
+from musig2 import HSig, HSig_xonly, Verif_Musig2_core, Verif_Musig2_all, Verif_Musig2_all_xonly
 
 
 
@@ -61,6 +61,31 @@ func vec_test_Musig2_core{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()-
 //Input to Hsig= [1, 2691991349280861182525365095645492501799041544647681493267316816575070318625, 964920030696087922447606943895072427921210732852145972476320138235037406950, 1154543393826499327384925594716943854756278752519748612882695342387905476485, 3198087695386183225673073483228017283558755677681197577257486316144848035013, 1312926488893051640838690020429502555760453277462134805675804440214385331882]
 
 //unitary vector test generated with test_musig2_example.sage
+func vec_test_Hsig_xonly{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(test_res:felt){
+ alloc_locals;
+ let (__fp__, _) = get_fp_and_pc();
+ local d;
+ 	
+ local  message:felt=	1312926488893051640838690020429502555760453277462134805675804440214385331882;
+ local  X :felt= 3067118560697589524435384931491320927549001107642126949141615071965375409500 ;
+ local  R :felt= 805608576337223666507608055448388656839464615861511853976287840398054978764  ;
+ local  s :felt= 2794984427638061003832909310448843078134666016451605026434589603196253996757 ;
+ local  expected :felt= 1405388610216890693451590793908065992860380736413274668546085119243050006294 ;//expected Hsig
+
+ let hashed:felt=HSig_xonly{hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(R,s,X, &message,1);
+  %{ print("Musig2 Hsig =", memory[ap-1]) %}//result of hsig(R,s,X,m)
+  
+ if(hashed==expected){
+  d=1;//warning:OK is one
+ }else{
+  d=0;
+ }
+ 
+ return (test_res=d);  
+}
+
+
+//unitary vector test generated with test_musig2_example.sage
 func vec_test_Hsig{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(test_res:felt){
  alloc_locals;
  let (__fp__, _) = get_fp_and_pc();
@@ -83,7 +108,6 @@ func vec_test_Hsig{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(test_
  
  return (test_res=d);  
 }
-
 
 // vec_test_pedersen_hash
 //unitary vector test generated with pedersen_hashpoint.sage
@@ -146,13 +170,34 @@ func vec_test_all{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(flag_v
  local  R :(felt, felt)=( 1154543393826499327384925594716943854756278752519748612882695342387905476485 , 3198087695386183225673073483228017283558755677681197577257486316144848035013 );
  local  s :felt= 1082631760734147029776619237951131338486686452862679559365522792258354836851 ;
    	  
- let res:felt=Verif_Musig2_all{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R, s, &X, &message, 1);
+ let res:felt=Verif_Musig2_all{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(&R[0], s, &X, &message, 1);
  
  %{ print("Musig2  full verification result=", memory[ap-1]) %}//result of signature
   
  return (flag_verif=res);  
 }
 
+//vector test generated with test_musig2_example.sage, 
+//hashing is dummy (not yet implemented in external sage) thus test fails (to be completed)
+func vec_test_all_xonly{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(flag_verif:felt) {
+    alloc_locals;
+    
+    // Get the value of the fp register.	
+ let (__fp__, _) = get_fp_and_pc();
+   
+  
+ 	
+ local  message:felt=	1312926488893051640838690020429502555760453277462134805675804440214385331882;
+ local  X :felt= 3067118560697589524435384931491320927549001107642126949141615071965375409500 ;
+ local  R :felt= 805608576337223666507608055448388656839464615861511853976287840398054978764 ;
+ local  s :felt= 2794984427638061003832909310448843078134666016451605026434589603196253996757 ;
+   	  
+ let res:felt=Verif_Musig2_all_xonly{ hash_ptr=pedersen_ptr, ec_op_ptr2=ec_op_ptr}(R, s, X, &message, 1);
+ 
+ %{ print("Musig2  full verification result=", memory[ap-1]) %}//result of signature
+  
+ return (flag_verif=res);  
+}
 
 //////////// MAIN
 func main{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
@@ -185,7 +230,15 @@ func main{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
      %{ if(memory[ap-1]==1):print("Test OK") %}//result of hash
      %{ if(memory[ap-1]!=1):print("Abortion") %}//result of hash
    
-     	
+
+//    Testing Hsig with x-only     
+     %{ print("\n******************* Unitary Test 3'- xonly") %}
+     let flag_test4=vec_test_Hsig_xonly{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     %{ print("Verif_hash_chain_core:", memory[ap-1],":") %}//result of hash chain
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of hash
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of hash
+     %{ if(memory[ap-1]!=1):exit() %}//result of signature
+       	
      
 //    Testing Verification Core
      %{ print("\n******************* Unitary Test 4") %}
@@ -202,14 +255,21 @@ func main{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}() {
      %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
      %{ if(memory[ap-1]!=1):exit() %}//result of signature
      
-     
+      
 //    Testing Full Verification 
      %{ print("\n******************* Unitary Test 5: Full Verification") %}
      let flag=vec_test_all{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
      %{ if(memory[ap-1]==1):print("Test OK") %}//result of signature
      %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
+     %{ if(memory[ap-1]!=1):exit() %}//result of signature
+    
      
-     
+//    Testing Full Verification xonly
+     %{ print("\n******************* Unitary Test 5': Full Verification xonly") %}
+     let flag=vec_test_all_xonly{ pedersen_ptr=pedersen_ptr, ec_op_ptr=ec_op_ptr}();
+     %{ if(memory[ap-1]==1):print("Test OK") %}//result of signature
+     %{ if(memory[ap-1]!=1):print("Abortion") %}//result of signature
+     %{ if(memory[ap-1]!=1):exit() %}//result of signature
      %{ print("\nAll test OK") %}//result of signature
   
    

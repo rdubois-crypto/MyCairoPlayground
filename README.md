@@ -19,16 +19,9 @@ You need to have Cairo and Sagemath installed.
 - thoth : https://github.com/FuzzingLabs/thoth/tree/master/thoth
 
 
-To compile type >make. The option of the makefile are:
-- make (default:none) The program writes the test vectors computation in the test_vec.dat file 
-- make example : display the result instead of writing it
-- make compile_n_run : compile and execute the Cairo code of Musig2 verification part (test_vector is hard written in test_musig2.cairo)
-
-
-
-
-To dissassemble, type >make asm (note that thoth is from FuzzingLabs and not guaranteed to be maintained)
-
+To compile goto Musig2 directoty then type >make. The option of the makefile are:
+- make (default:Cairo) The program writes the test vectors computation in the test_vec.dat file 
+- make asm : display the assembly. (note that thoth is from FuzzingLabs and not guaranteed to be maintained)
 
 ## License 
 License: This software is licensed under a dual BSD and GPL v2 license.
