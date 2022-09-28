@@ -73,8 +73,8 @@ def H_non(KeyAgg, nb_users, vec_R, message, size_message, curve_order):
 def H_sig(KeyAgg, R, m, size_message, curve_order):
 	Fq=GF(curve_order);
 	Input=[_SEPARATION_SIG];#separating the domains
-	Input+=[int(KeyAgg[0]), int(KeyAgg[1])];
-	Input+=[int(R[0]), int(R[1])];
+	Input+=[int(KeyAgg[0])];
+	Input+=[int(R[0])];
 	for cpt_i in [0..size_message-1]:
 		Input=Input+[m[cpt_i]];
 		
