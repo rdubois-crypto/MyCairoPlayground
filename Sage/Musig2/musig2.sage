@@ -13,7 +13,7 @@
 ## Stark curve parameters extracted from
 ## https:github.com/starkware-libs/cairo-lang/blob/master/src/starkware/cairo/common/ec.cairo
 
-load('pedersen_hashpoint.sage');
+load('../PedersenHash/pedersen_hashpoint.sage');
 
 # note: as much as possible, loop variable i is used to adress user in [0..n-1], 
 # while j adress the position in a vector (of dimension n) of values .

@@ -20,9 +20,9 @@ from starkware.cairo.common.ec import StarkCurve, ec_add, ec_mul, ec_sub, is_x_o
 from starkware.cairo.common.ec_point import EcPoint
 from starkware.cairo.common.hash_state import  hash_init,  hash_update, hash_finalize , HashState, hash_felts
 from starkware.cairo.common.hash import hash2
-from musig2 import HSig, HSig_xonly, Verif_Musig2_core, Verif_Musig2_all, Verif_Musig2_all_xonly
+from musig2 import HSig, Verif_Musig2_core, Verif_Musig2_all
 
-
+from musig2_xonly import HSig_xonly, Verif_Musig2_all_xonly, Verif_Musig2_short_xonly
 
 
 //unitary vector test generated with musig2.sage

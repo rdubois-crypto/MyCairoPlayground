@@ -24,8 +24,8 @@ from sage.misc.sage_ostools import redirection
 load('musig2.sage');
 load('../common/io_conversions.sage');
 
-C_filepath='test_vector_musig2.c';
-filep = open(C_filepath,'w');
+C_filepath='test_vec/test_vector_musig2.c';
+filep = open(C_filepath,'a');
 
 
 def DisplaySave(comment, varname, counter, var):
@@ -156,30 +156,34 @@ with open(C_filepath, 'w') as file_out:
 
 	##***********************Verification functions******************************/
 	print("\n*******************Verification :\n");
+	print("/*Public KeyAgg */");
+	print(hex(int(KeyAgg[0])));
+
+	
 	print("/*R part */");
 	name='R_x';
-	print(R[0]);
-	Print_C_MSB("/*"+name+"*/",name, int(R[0]),8,"");
+	print(hex(int(R[0])));
 	fprint_c_MSB(filep, "\n /*"+name+"*/",name, int(R[0]),8,"");
 	
 	name='R_y';
-	Print_C_MSB("/*"+name+"*/",name, int(R[1]),8,"");
+	
 	fprint_c_MSB(filep, "\n /*"+name+"*/",name, int(R[1]),8,"");
 	
 	print("/*s part */");
+	print(hex(int(s)));
+	
 	name='s';
-	Print_C_MSB("/*"+name+"*/",name, int(s),8,"");
 	fprint_c_MSB(filep, "\n /*"+name+"*/",name, int(s),8,"");
 	
 	print("/*c part */");
+	print(hex(int(c)));
 	name='c';
-	Print_C_MSB("/*"+name+"*/",name, int(c),8,"");
 	fprint_c_MSB(filep, "\n /*"+name+"*/",name, int(c),8,"");
 	
-	
-	
+
 	res_verif=Musig_Verif_Core(Curve, curve_Generator,R,s,KeyAgg, int(c));
 	print(res_verif);
+	
 	filep.close();
 
 
