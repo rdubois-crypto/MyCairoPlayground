@@ -32,7 +32,7 @@ def CairoDeclare_from_sacalar(comment, Scalar):
 
 #set a fixed/variable seed for debug/generation purposes
 set_random_seed(seed)
-
+print("set seed with", seed)
 	
 ##***********************hash functions*******************************************/
 # The following constants are used for domain separation of the H_agg, H_nonce and H_sig functions
@@ -49,7 +49,7 @@ def H_agg(Coefficients, n_users, Xx, Xy, curve_order):
 	#concatenate L with X, each public key is represented as a couple of felt
 	Input=[_SEPARATION_AGG];			#separating the domains
 	Input+=Coefficients+[Xx, Xy];			#Append X to L
-	Hagg=pedersen_hash(Input, 2*(n_users+1));	#H(L||X)
+	Hagg=pedersen_hash(Input, 2*(n_users+1)+1);	#H(L||X)
 	return int(Fq(Hagg));
 
 ### H_Nonce = pedersen_hash_state(Xtilde||Ris||m)

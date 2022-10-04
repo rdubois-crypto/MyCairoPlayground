@@ -102,7 +102,7 @@ with open(C_filepath, 'w') as file_out:
 	KeyAgg=Musig2_KeyAgg(Curve, curve_Generator, L, nb_users, Stark_order);
 	print("Aggregated Key:", KeyAgg);
 	if(int(KeyAgg[1])&1==1): 
-		print("Wrong Key Agg, change Seed");
+		print("Wrong Key Agg, change Seed from", seed);
 		exit();
 	
 	print("/*Aggregated Key: */");

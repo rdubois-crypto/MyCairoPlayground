@@ -7,7 +7,7 @@
 Cairo:
 	cairo-compile test_musig2.cairo --output test_musig2.json
 	date >> test_vec.dat
-	sage -c '_MU=2;nb_users=4; size_message=1;seed=0;load("test_musig2_example.sage")' >>test_vec.dat; 
+	sage -c '_MU=2;nb_users=4; size_message=1;seed=6;load("test_musig2_example.sage")' >>test_vec.dat; 
 	cairo-run --program=test_musig2.json --layout=all
 
 #run a Musig2 aggregation for a set of 'nb_users' size (min=2)
@@ -23,7 +23,7 @@ asm:
 	thoth -f test_musig2.json
 	
 example:
-	sage -c '_MU=2;nb_users=4; size_message=1;seed=0;load("test_musig2_example.sage")' >>test_vec.dat; 
+	sage -c '_MU=2;nb_users=4; size_message=1;seed=6;load("test_musig2_example.sage")' >>test_vec.dat; 
 
 
 default:
