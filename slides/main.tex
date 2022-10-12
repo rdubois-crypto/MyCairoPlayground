@@ -1,0 +1,436 @@
+	\documentclass[aspectratio=43]{beamer}
+\usepackage[english]{babel}
+\input{chapters/preamble}
+
+    \setbeamertemplate{background} 
+    {
+        \includegraphics[width=\paperwidth,height=\paperheight]{images/fond1.jpg}
+    }
+\title{Multi And Threshold Signatures for Starknet} %->->->->-> Check hyperref title <-<-<-<-<-
+\subtitle{(Warming up for Lisbonn Hackaton)}
+\author[R. Dubois]{\textcolor{yellow}{Renaud Dubois}}
+\institute[LIT]{
+    \textcolor{white}{Ledger}%
+    \\%
+    \textcolor{white}{Innovation Team}%
+} %You can change the Institution if you are from somewhere else
+\date{\today}
+%\logo{\includegraphics[width= 0.05\textwidth]{images/logo.png}}
+
+\begin{document}
+    
+    \frame{\titlepage}
+%%%%%%%%%%%%         
+    \begin{frame}{Summary}
+     
+     \only<1>
+     {
+     \begin{center}
+     \includegraphics[width=12cm]{images/concepts.jpg}
+     \end{center}
+     }
+     \only<2>
+     {
+        \tableofcontents
+      }  
+%         Reed-Solomon Proximity (RP) Problem: Given oracle access to a Reed-Solomon code $f:S\rightarrow\mathbb{F}$, the Reed-Solomon Proximity Problem asks that a verifier $V$ distinguishes between two cases with high probability: \begin{itemize}
+%                                                                                                                                                                                                                                           \item $$f\in \textbf{RS}[\mathbb{F},S,\rho]$$
+%                                                                                                                                                                                                                                           \item $f$ is $\delta$-far pairwise Hamming distance from all $$f^\prime\in\textbf{RS}[\mathbb{F},S,\rho], f\neq f^\prime$$.
+%                                                                                                                                                                                                                                          \end{itemize} 
+   
+    \end{frame} 
+%%%%%%%%%%%% 
+   \section{Signatures, MultiSigs and ThresholdSigs }
+    %\frame{\sectionpage}
+    \subsection{Basic Concepts}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+    \begin{frame}{Signatures}
+     
+%      \begin{definition}[Wikipedia]
+%      Identity is the qualities, beliefs, personality traits, appearance, and/or expressions that characterize a person or group.
+%      \end{definition}
+     A digital signature is a mathematical scheme for verifying the authenticity of digital messages or documents.
+     
+     \begin{definition}[(Classical) Digital Signature]
+     A signature scheme is a tuple of function:
+     \begin{itemize}
+     \item $Setup$
+     \item $KeyGen$
+     \item $Sign$
+     \item $Verify$
+     \end{itemize}
+     
+     \end{definition}
+     Most commonly used signature scheme is ECDSA (Bitcoin, Ethereum)
+     \begin{itemize}
+     \item implemented in Starknet/\href{https://github.com/starkware-libs/cairo-lang/tree/master/src/starkware/cairo/common}{\blue{Cairo}} (P256, NTT/Stark friendly Starknet Curve)
+     \item available in your favorite sdk
+     \href{https://developers.ledger.com/docs/nano-app/crypto-api/ox__ec_8h/}{\blue{Ledger}}
+     
+     \end{itemize} 
+    
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ 
+  \begin{frame}{Multi-signatures}
+ A multi-signature is a digital signature allowing users to {\it aggregate} their keys in an aggregated public key. The signatures are also aggregated.
+  Verifier API is unchanged.
+  
+  
+  \only<1>{
+  \begin{center}
+        \includegraphics[width=8cm]{images/aggregate.png}
+        \end{center}
+  }
+  \only<2>{
+   \begin{definition}[(Classical) Digital Signature]
+     A multisig scheme is a tuple of function:
+     \begin{itemize}
+     \item $(Setup, Keygen, Sign)$
+     \item $KeyAgg$
+     \item $SignAgg$
+     \item $Verify$
+     \end{itemize}
+  \end{definition}
+  }
+  \only<3>
+  {
+  Advantages (over naive concatenation/trusted aggregator):
+  \begin{itemize}
+  \item only one signature over channel (bandwidth consumption)
+  \item no need for a trusted aggregator (no remote private key, own your crypto !)
+  \item no risk of contract failure (don't trust, no don't)
+  \item verifier doesn't need to know the underlying group of users
+  \end{itemize}
+  Example: Bitcoin Taproot, \href{https://en.bitcoin.it/wiki/BIP_0340}{\blue{BIP340}}
+  } 
+ 
+ \end{frame}
+ 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+\begin{frame}{Threshold-signatures}
+
+
+ A $(k,n)$ threshold signature is a digital signature allowing a subset (threshold) of $k$ users from $n$ to {\it aggregate} a signature . 
+ 
+  \only<1>
+  {
+   \begin{center}
+        \includegraphics[width=8cm]{images/threshold.png}
+        \end{center}
+  }
+  \only<2>
+  {
+   \begin{itemize}
+     \item $(Setup, Keygen, Sign)$
+     \item $KeyAgg$
+     \item $SignAgg$
+     \item $Verify$
+     \end{itemize}
+      {
+  Advantages (over naive concatenation/trusted aggregator):
+  \begin{itemize}
+  \item only one signature over channel (bandwidth consumption)
+  \item no need for a trusted aggregator (no remote private key, own your crypto !)
+  \item no risk of contract failure (don't trust, no don't)
+  \item verifier doesn't need to know the underlying group of users
+  
+  \end{itemize}
+ 
+  } 
+   Example: FROST(Blockstream).
+ }
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ \subsection{Under the hood}
+ 
+\begin{frame}{EC-Schnorr and ECDSA}
+
+\begin{definition}[Common SetUp and KeyGen]
+\begin{itemize}
+\item[] {\textbf {SetUp()}} 
+Pick a \href{https://github.com/LedgerHQ/speculos/blob/master/src/bolos/cx_ec_domain.c}{\blue{curve}} with parameters $(p,a,b,Gx,Gy,q)$ (\href{https://hyperelliptic.org/EFD/g1p/auto-shortw.html}{\blue{ weierstrass equations and formulaes}} ).
+
+\item[] {\textbf {KeyGen()}} Randomly select private key $x\leftarrow^\$ F_q$, publish public key $Q=xG$ (flip x if Gy is even for xonly implementation).
+\end{itemize}
+\end{definition}
+
+
+\only<1>
+{
+\begin{definition}[ECDSA-Sign]
+\begin{itemize}
+\item $r=(kG)_x$
+\item $e=H(M)$
+\item $s=k^{-1}(e+sr)$
+\item $Sig=(R,s)$
+\end{itemize}
+\end{definition}
+}
+
+\only<2>
+{
+\begin{definition}[Schnorr-Sign]
+\begin{itemize}
+\item $R=kG$
+\item $e=H(R||m)$
+\item $s=k-xe$
+\item $Sig=(R,s)$
+\end{itemize}
+\end{definition}
+}
+
+\only<3>
+{
+\begin{definition}[ECDSA-Verif]
+\begin{itemize}
+
+\item $e=H(M)$
+\item $r'=(es^{-1}G+rs^{-1}Q)_x $
+\item $Accept~ iff. r==r'$
+\end{itemize}
+\end{definition}
+}
+
+\only<4>
+{
+\begin{definition}[Schnorr-Verif]
+\begin{itemize}
+
+\item $e=H(M)$
+\item $R'=sG+eQ$
+\item $Accept~ iff. e'==H(R'||m)$
+\end{itemize}
+\end{definition}
+}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Musig2: using Schnorr additive properties}
+
+   
+       
+
+\only<1>
+{  
+
+Schnorr is linear in $(k,x)$, while ECDSA has degree two monomial, and {\red linerarity} is good.
+
+Linearity allow homomorphic additions.
+
+Idea: split X into $X=\sum a_iX_i$, k into $k=\sum k_i$.
+     \begin{center}
+     \includegraphics[width=5cm]{images/multi3d.jpg}
+     \end{center}
+}
+
+\only<2>
+{
+
+  \begin{center}
+\begin{tabular}{|c|c |c|}
+\hline
+Operation&Schnorr & Insec\_Musig \\
+\hline
+KeyGen &$X=xG$       & $X_i=x_iG$ \\
+{\red KeyAgg} & - & X=$\sum_{i=0}^{n-1} a_iX_i$ \\
+Nonce&$r$	&  $k_i$ \\
+Ephemeral&$R=rG$   & $R_i=k_iG$ \\
+{\red Aggregate R}   & -     & $R=(\sum_{i=0}^{n-1} a_i.k_i).G=k.G$\\
+Hash &$e=H(m||R)$ & $e=H(m||R)$\\
+Sign &$s=k-xe$    & $s_i=k_i-a_ix_ie$  \\
+{\red Aggregate s} & - & $s=\sum s_i = k-xe$ \\
+\hline
+\end{tabular}  
+ \end{center}
+ }
+ 
+\only<3>
+{  
+Musig2 uses a vectorial nonce of length $\mu$, injected in previous Insec\_Musig scheme.
+
+  \begin{center}
+\begin{tabular}{|c|c |c|}
+\hline
+Operation&Schnorr & Musig2 \\
+\hline
+KeyGen &$X=xG$       & $X_i=x_iG$ \\
+{\red KeyAgg} & - & X=$\sum_{i=0}^{n-1} a_iX_i$ \\
+Nonce&$r$	&  $\vec{r_i}=(r_{i1}, \ldots , r_{i\mu})$ \\
+Ephemeral&$R=rG$   & $\vec{R_i}=\vec{r_i}G$ \\
+Hash Nonce & - & $b=H(X||R_0 \ldots R_\mu ||m)$\\
+
+{\red Aggregate R}   & -     & $R=\sum_{j=1}^\mu b^{j-1} (\sum_{i=0}^{n-1} a_i.k_i).G=k.G$\\
+Hash &$e=H(m||R)$ & $e=H(m||R)$\\
+Sign &$s=k-xe$    & $s_i=(\sum_{j=1}^\mu k_ijb^{j-1} )-a_ix_ie$  \\
+{\red Aggregate s} & - & $s=\sum s_i = k-xe$ \\
+\hline
+\end{tabular}  
+ \end{center}
+  
+  
+}
+\end{frame}
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Musig2: Thresholdisation Principle}
+
+\only<1>
+{
+Thresholdisation use the principle of \href{https://dl.acm.org/doi/10.1145/359168.359176}{ \blue{Shamir's secret sharing scheme }}, which is in fact a reed solomon error correcting code.
+
+Goal: Given enough shares, it is possible to reconstruct the initial value.
+
+\begin{center}
+\includegraphics[width=4cm]{images/jump.jpg}
+\end{center}            
+
+}
+\only<2>
+{
+Lagrange interpolation enables to switch from points to polynomial coefficients using the following formulaes:
+
+\begin{center}
+\begin{tabular}{cc}
+
+\begin{minipage}{4cm}
+\begin{center}
+\includegraphics[width=4cm]{images/interpolation.jpg}
+\end{center}            
+\end{minipage}
+&         
+\begin{minipage}{4cm}
+$$l_j(x)=\prod_{m\ne j}{x-x_m \over x_j-x_m}.$$
+$$L(x)=\sum_{j=0}^k P(x_j)l_j(x).$$
+\end{minipage}         
+\\
+\end{tabular}
+\end{center}
+The transformation L from $(P_0 \ldots P_k)$ to $(a_0 \ldots a_k)$ is a {\red linear} transformation in x.
+
+}
+\only<3>
+{
+Key ideas:
+\begin{itemize}
+\item interprete aggregated secret key as a polynomial $P$ of degree $k$,
+\item each share (user secret key) is a point of the polynomial,
+\item blind the computation in the curve domain to perform the aggregation only handling public elements,
+\item replace '$\sum_{i=0}^n$' in previous scheme by Lagrange polynomials,
+\item some more steps are necessary (commitments) to avoid cheating.
+\end{itemize}
+
+Read \href{https://eprint.iacr.org/2020/852.pdf}{{\blue FROST}} for full description.
+
+}
+
+
+
+\only<3>
+{
+\vskip+2cm
+Sidenote: This is closely related to the principle of FRI used in starks.
+} 
+\end{frame}  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+ \section{Use cases}
+ 
+\subsection{Multi factor authentication}
+ 
+\begin{frame}{Multi factor authentication to Starknet Contract}
+Implement enhanced policy access to assets.
+
+\begin{exampleblock}{Access Policy}
+\begin{itemize}
+\item Low amount: Host (hot wallet) only
+\item High amount: Host (smartphone) + HW wallet (Nano) 
+\end{itemize}
+\end{exampleblock}
+
+
+\end{frame} 
+
+\subsection{Voting system}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Voting system}
+Reduce risk and complexity of a contract implementing a voting system.
+A vote is adopted only though a valid TS-Sig.
+
+\begin{exampleblock}{Gnosis advanced}
+\begin{itemize}
+\item implement a threshold voting system, with $k={n\over 2}$
+\end{itemize}
+\end{exampleblock}
+
+
+\end{frame} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Ledger/Starknet Musig2, call for Lisbonn}
+
+
+\begin{frame}{Ledger/Starknet Musig2}
+
+
+Current state:
+\begin{itemize}
+\item Schnorr verification available in Cairo, (100\% )
+\item High-level simulation in Sagemath of full protocol (Sign/Verify for a pool of users) (100\% )
+\item Musig2 implementation on top of a virtualization layer (only integrating bolos for now) (still some issues)
+\end{itemize} 
+
+     
+            \begin{tabular}{ccc}
+           C Library (Nano Signer) &~~~~~~~~~~~~~~~ &   Cairo Code (Contract Verifier)\\
+            
+           \includegraphics[width=2cm]{images/musig2_qr.jpg} & ~~~~~~~~~~~~~~~&\includegraphics[width=2.1cm]{images/cairomusig2_qr.jpg}
+            \\
+           \end{tabular}     		
+\end{frame} 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Starknet Hackaton}
+
+\begin{center}
+\includegraphics[width=6cm]{images/lisbon.png}
+\end{center}
+
+Join the team for:
+\begin{itemize}
+\item Front end integration (wallet, current development over Argent) over verifier (Cairo) or signer (C)
+\item Integration of a different accelerator/library in the virtualization layer (C)
+\item Contribute to the threshold version (Sagemath/C)
+\end{itemize} 
+
+\end{frame} 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    \section{}
+    \begin{frame}{}
+        \centering
+            {\Huge\bfseries
+        \textcolor{yellow}{Questions ?}}
+        
+            \includegraphics[width=8cm]{images/questions.jpg}
+            
+            \begin{tabular}{ccc}
+           C Library (Nano Signer) &~~~~~~~~~~~~~~~ &   Cairo Code (Contract Verifier)\\
+            
+           \includegraphics[width=2cm]{images/musig2_qr.jpg} & ~~~~~~~~~~~~~~~&\includegraphics[width=2.1cm]{images/cairomusig2_qr.jpg}
+            \\
+           \end{tabular}     		
+    \end{frame}
+\end{document}
+
+  
+% https://en.wikipedia.org/wiki/Privacy
+% [CL16]: Concepts Around Privacy-Preserving Attribute-Based CredentialsJan Camenisch  https://hal.archives-ouvertes.fr/hal-01276046/document
