@@ -3,7 +3,7 @@ A little playground to store some experiments with Cairo, the Starknet smarcontr
 
 
 ## Content
-You won't find anything fancy here. Just some experiments, beginning with some Musig2 Cairo verification implementation.
+Some Musig2 Cairo verification implementation with a sage high-level test vectors generation.
 
 Cairo toolbox is here:
 https://github.com/starkware-libs/cairo-lang/

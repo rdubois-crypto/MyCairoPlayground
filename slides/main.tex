@@ -2,12 +2,14 @@
 \usepackage[english]{babel}
 \input{chapters/preamble}
 
+\definecolor{cyan}{rgb}{.63,.79,.95}
+
     \setbeamertemplate{background} 
     {
         \includegraphics[width=\paperwidth,height=\paperheight]{images/fond1.jpg}
     }
 \title{Multi And Threshold Signatures for Starknet} %->->->->-> Check hyperref title <-<-<-<-<-
-\subtitle{(Warming up for Lisbonn Hackaton)}
+\subtitle{(Warming up for Lisbon Hackaton)}
 \author[R. Dubois]{\textcolor{yellow}{Renaud Dubois}}
 \institute[LIT]{
     \textcolor{white}{Ledger}%
@@ -63,9 +65,9 @@
      \end{definition}
      Most commonly used signature scheme is ECDSA (Bitcoin, Ethereum)
      \begin{itemize}
-     \item implemented in Starknet/\href{https://github.com/starkware-libs/cairo-lang/tree/master/src/starkware/cairo/common}{\blue{Cairo}} (P256, NTT/Stark friendly Starknet Curve)
+     \item implemented in Starknet/\href{https://github.com/starkware-libs/cairo-lang/tree/master/src/starkware/cairo/common}{\cyan{Cairo}} (P256, NTT/Stark friendly Starknet Curve)
      \item available in your favorite sdk
-     \href{https://developers.ledger.com/docs/nano-app/crypto-api/ox__ec_8h/}{\blue{Ledger}}
+     \href{https://developers.ledger.com/docs/nano-app/crypto-api/ox__ec_8h/}{\cyan{Ledger}}
      
      \end{itemize} 
     
@@ -80,7 +82,7 @@
   
   \only<1>{
   \begin{center}
-        \includegraphics[width=8cm]{images/aggregate.png}
+        \includegraphics[width=11cm]{images/aggregate.png}
         \end{center}
   }
   \only<2>{
@@ -96,14 +98,30 @@
   }
   \only<3>
   {
-  Advantages (over naive concatenation/trusted aggregator):
+  \begin{exampleblock}{Advantages (over naive concatenation/trusted aggregator)}
   \begin{itemize}
   \item only one signature over channel (bandwidth consumption)
   \item no need for a trusted aggregator (no remote private key, own your crypto !)
   \item no risk of contract failure (don't trust, no don't)
   \item verifier doesn't need to know the underlying group of users
   \end{itemize}
-  Example: Bitcoin Taproot, \href{https://en.bitcoin.it/wiki/BIP_0340}{\blue{BIP340}}
+  \end{exampleblock}
+  
+  Example: Bitcoin Taproot, \href{https://en.bitcoin.it/wiki/BIP_0340}{\cyan{BIP340}}
+  }
+  \only<4>
+  {
+  \begin{alertblock}{drawback}
+   \begin{itemize}
+  \item increased computational complexities for signers
+  \item requires (off chain) communications between signers  
+  \item computation in 2 rounds (Sig1, Sig2)
+
+\begin{center}
+  \includegraphics[width=4cm]{images/rounds.jpg}
+  \end{center}
+  \end{itemize}
+  \end{alertblock}
   } 
  
  \end{frame}
@@ -114,12 +132,12 @@
 \begin{frame}{Threshold-signatures}
 
 
- A $(k,n)$ threshold signature is a digital signature allowing a subset (threshold) of $k$ users from $n$ to {\it aggregate} a signature . 
+ A $(k,n)$ threshold signature (TS-Sig) is a digital signature allowing a subset (threshold) of $k$ users from $n$ to {\it aggregate} a signature . 
  
   \only<1>
   {
    \begin{center}
-        \includegraphics[width=8cm]{images/threshold.png}
+        \includegraphics[width=12.2cm]{images/threshold.png}
         \end{center}
   }
   \only<2>
@@ -129,16 +147,16 @@
      \item $KeyAgg$
      \item $SignAgg$
      \item $Verify$
-     \end{itemize}
+   \end{itemize}
+     
       {
-  Advantages (over naive concatenation/trusted aggregator):
+      
+  \begin{exampleblock}{Advantages (over naive concatenation/trusted aggregator)}
   \begin{itemize}
-  \item only one signature over channel (bandwidth consumption)
-  \item no need for a trusted aggregator (no remote private key, own your crypto !)
-  \item no risk of contract failure (don't trust, no don't)
-  \item verifier doesn't need to know the underlying group of users
-  
+  \item All of multisig ($k=n$ is equivalent)
+  \item More flexibility in access policy
   \end{itemize}
+  \end{exampleblock}
  
   } 
    Example: FROST(Blockstream).
@@ -146,68 +164,54 @@
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  \subsection{Under the hood}
- 
-\begin{frame}{EC-Schnorr and ECDSA}
 
-\begin{definition}[Common SetUp and KeyGen]
-\begin{itemize}
-\item[] {\textbf {SetUp()}} 
-Pick a \href{https://github.com/LedgerHQ/speculos/blob/master/src/bolos/cx_ec_domain.c}{\blue{curve}} with parameters $(p,a,b,Gx,Gy,q)$ (\href{https://hyperelliptic.org/EFD/g1p/auto-shortw.html}{\blue{ weierstrass equations and formulaes}} ).
+\begin{frame}{Disclaimer}
 
-\item[] {\textbf {KeyGen()}} Randomly select private key $x\leftarrow^\$ F_q$, publish public key $Q=xG$ (flip x if Gy is even for xonly implementation).
-\end{itemize}
-\end{definition}
+ \begin{center}
+ \includegraphics[width=12.2cm]{images/panic.jpg}
+ \end{center}
 
-
-\only<1>
-{
-\begin{definition}[ECDSA-Sign]
-\begin{itemize}
-\item $r=(kG)_x$
-\item $e=H(M)$
-\item $s=k^{-1}(e+sr)$
-\item $Sig=(R,s)$
-\end{itemize}
-\end{definition}
-}
-
-\only<2>
-{
-\begin{definition}[Schnorr-Sign]
-\begin{itemize}
-\item $R=kG$
-\item $e=H(R||m)$
-\item $s=k-xe$
-\item $Sig=(R,s)$
-\end{itemize}
-\end{definition}
-}
-
-\only<3>
-{
-\begin{definition}[ECDSA-Verif]
-\begin{itemize}
-
-\item $e=H(M)$
-\item $r'=(es^{-1}G+rs^{-1}Q)_x $
-\item $Accept~ iff. r==r'$
-\end{itemize}
-\end{definition}
-}
-
-\only<4>
-{
-\begin{definition}[Schnorr-Verif]
-\begin{itemize}
-
-\item $e=H(M)$
-\item $R'=sG+eQ$
-\item $Accept~ iff. e'==H(R'||m)$
-\end{itemize}
-\end{definition}
-}
 
 \end{frame}
+ 
+
+\begin{frame}{EC-Schnorr and ECDSA}
+
+SetUP() : Pick a \href{https://github.com/LedgerHQ/speculos/blob/master/src/bolos/cx_ec_domain.c}{\cyan{curve}} with parameters $(p,a,b,Gx,Gy,q)$ (\href{https://hyperelliptic.org/EFD/g1p/auto-shortw.html}{\cyan{ weierstrass equations and formulaes}} ).
+
+  \begin{center}
+\begin{tabular}{|c|c |c|}
+\hline
+Operation&Schnorr & ECDSA \\
+\hline
+KeyGen &$Q=xG$        &$Q=xG$ \\
+
+Nonce$^*$&$k$	&  $k$ \\
+Ephemeral&$R=kG$    &$R=kG$  \\
+\hline
+
+Hash &$e=H(m||R)$ & $e=H(m)$\\
+\hline
+
+Sign &$s=k-xe$    & $s=k^{-1}(e+xr)$  \\
+     & $Sig=(R,s)$ & $Sig=(r,s)$ \\	
+\hline
+Verif &   $R'=sG+eQ$& $r'=(es^{-1}G+rs^{-1}Q)_x $ \\    
+      & Accept if R'=R & Accept if r'=r \\
+\hline
+\end{tabular}  
+ \end{center}
+ 
+ 
+ \begin{center}
+ \begin{small}
+ {\emph{
+ (* nonce generation may use \href{https://www.rfc-editor.org/rfc/rfc6979}{\cyan{RFC6979}} for misuse resistance)}}
+ \end{small}
+\end{center}
+
+\end{frame} 
+ 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -219,14 +223,21 @@ Pick a \href{https://github.com/LedgerHQ/speculos/blob/master/src/bolos/cx_ec_do
 \only<1>
 {  
 
-Schnorr is linear in $(k,x)$, while ECDSA has degree two monomial, and {\red linerarity} is good.
+Schnorr is linear in $(k,x)$ and {\red linerarity} is cool:
+\begin{tabular}{lllr}
+$Sig(k,x_1)+Sig(k,x_2)$&$=$& $Sig(k, x_1+x_2), $&$\forall  x=x_1+ x_2$\\
+$Sig(k_1,x)+Sig(k_2,x)$&$=$& $Sig(k, x), $&$\forall k=k_1+ k_2$\\
+\end{tabular}
 
-Linearity allow homomorphic additions.
+(while ECDSA has degree two monomial in $(k,x)$)
 
-Idea: split X into $X=\sum a_iX_i$, k into $k=\sum k_i$.
-     \begin{center}
-     \includegraphics[width=5cm]{images/multi3d.jpg}
-     \end{center}
+ \begin{center}
+\includegraphics[width=4cm]{images/multi3d.jpg}
+\end{center}
+     
+     
+Linearity allow homomorphic additions. Idea: split X into $X=\sum a_iX_i$, k into $k=\sum k_i$.
+    
 }
 
 \only<2>
@@ -239,8 +250,8 @@ Operation&Schnorr & Insec\_Musig \\
 \hline
 KeyGen &$X=xG$       & $X_i=x_iG$ \\
 {\red KeyAgg} & - & X=$\sum_{i=0}^{n-1} a_iX_i$ \\
-Nonce&$r$	&  $k_i$ \\
-Ephemeral&$R=rG$   & $R_i=k_iG$ \\
+Nonce$^*$&$k$	&  $k_i$ \\
+Ephemeral&$R=kG$   & $R_i=k_iG$ \\
 {\red Aggregate R}   & -     & $R=(\sum_{i=0}^{n-1} a_i.k_i).G=k.G$\\
 Hash &$e=H(m||R)$ & $e=H(m||R)$\\
 Sign &$s=k-xe$    & $s_i=k_i-a_ix_ie$  \\
@@ -248,6 +259,7 @@ Sign &$s=k-xe$    & $s_i=k_i-a_ix_ie$  \\
 \hline
 \end{tabular}  
  \end{center}
+ 
  }
  
 \only<3>
@@ -261,8 +273,8 @@ Operation&Schnorr & Musig2 \\
 \hline
 KeyGen &$X=xG$       & $X_i=x_iG$ \\
 {\red KeyAgg} & - & X=$\sum_{i=0}^{n-1} a_iX_i$ \\
-Nonce&$r$	&  $\vec{r_i}=(r_{i1}, \ldots , r_{i\mu})$ \\
-Ephemeral&$R=rG$   & $\vec{R_i}=\vec{r_i}G$ \\
+Nonce$^*$&$k$	&  $\vec{k_i}=(k_{i1}, \ldots , k_{i\mu})$ \\
+Ephemeral&$R=kG$   & $\vec{R_i}=\vec{k_i}G$ \\
 Hash Nonce & - & $b=H(X||R_0 \ldots R_\mu ||m)$\\
 
 {\red Aggregate R}   & -     & $R=\sum_{j=1}^\mu b^{j-1} (\sum_{i=0}^{n-1} a_i.k_i).G=k.G$\\
@@ -283,7 +295,7 @@ Sign &$s=k-xe$    & $s_i=(\sum_{j=1}^\mu k_ijb^{j-1} )-a_ix_ie$  \\
 
 \only<1>
 {
-Thresholdisation use the principle of \href{https://dl.acm.org/doi/10.1145/359168.359176}{ \blue{Shamir's secret sharing scheme }}, which is in fact a reed solomon error correcting code.
+Thresholdisation use the principle of \href{https://dl.acm.org/doi/10.1145/359168.359176}{ \cyan{Shamir's secret sharing scheme }}, which is in fact a reed solomon erasure code.
 
 Goal: Given enough shares, it is possible to reconstruct the initial value.
 
@@ -314,6 +326,9 @@ $$L(x)=\sum_{j=0}^k P(x_j)l_j(x).$$
 \end{center}
 The transformation L from $(P_0 \ldots P_k)$ to $(a_0 \ldots a_k)$ is a {\red linear} transformation in x.
 
+\vskip+1cm
+{\emph{Sidenote: This is closely related to the principle of FRI used in starks.}}
+
 }
 \only<3>
 {
@@ -326,17 +341,12 @@ Key ideas:
 \item some more steps are necessary (commitments) to avoid cheating.
 \end{itemize}
 
-Read \href{https://eprint.iacr.org/2020/852.pdf}{{\blue FROST}} for full description.
+Read \href{https://eprint.iacr.org/2020/852.pdf}{{\cyan FROST}} for full description.
 
 }
 
 
 
-\only<3>
-{
-\vskip+2cm
-Sidenote: This is closely related to the principle of FRI used in starks.
-} 
 \end{frame}  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -376,27 +386,45 @@ A vote is adopted only though a valid TS-Sig.
 \end{frame} 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Ledger/Starknet Musig2, call for Lisbonn}
+\section{Ledger/Starknet Musig2, call for Lisbon}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Ledger/Starknet Musig2}
+
+Specificities of Musig2 Starknet (ease Prover/Verifier computations)
+\begin{itemize}
+\item Uses Pedersen Hash as core hash function 
+\item Uses Starknet curve as elliptic domain
+\item Implement x-only verification
+\end{itemize} 
+The implementation is a generic one (takes hash and elliptic domain as SetUp parameter).
+The aim is to overlap with B340 if selecting P256k1 and SHA256 instead (TBD).     
+     
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 \begin{frame}{Ledger/Starknet Musig2}
 
 
 Current state:
 \begin{itemize}
-\item Schnorr verification available in Cairo, (100\% )
-\item High-level simulation in Sagemath of full protocol (Sign/Verify for a pool of users) (100\% )
-\item Musig2 implementation on top of a virtualization layer (only integrating bolos for now) (still some issues)
+\item Schnorr verification available in Cairo, 
+\item High-level simulation in Sagemath of full protocol (Sign/Verify for a pool of users) 
+\item Musig2 implementation on top of a virtualization layer (only integrating bolos for now) 
+\item currently working on thresholdization
 \end{itemize} 
 
      
             \begin{tabular}{ccc}
-           C Library (Nano Signer) &~~~~~~~~~~~~~~~ &   Cairo Code (Contract Verifier)\\
+           \href{https://github.com/rdubois-crypto/CYLIB-Speculos}{\cyan{C Library (Nano Signer)}} &~~~~~~~~~~~~~~~ &   \href{https://github.com/rdubois-crypto/MyCairoPlayground}{\cyan{Cairo Code (Contract Verifier)}}\\
             
            \includegraphics[width=2cm]{images/musig2_qr.jpg} & ~~~~~~~~~~~~~~~&\includegraphics[width=2.1cm]{images/cairomusig2_qr.jpg}
             \\
            \end{tabular}     		
 \end{frame} 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{frame}{Starknet Hackaton}
@@ -422,10 +450,10 @@ Join the team for:
         
             \includegraphics[width=8cm]{images/questions.jpg}
             
-            \begin{tabular}{ccc}
-           C Library (Nano Signer) &~~~~~~~~~~~~~~~ &   Cairo Code (Contract Verifier)\\
+           \begin{tabular}{ccc}
+           \href{https://github.com/rdubois-crypto/CYLIB-Speculos}{\cyan{C Library}} & ~~~~~~~~~~~~~~~~~~\href{https://github.com/rdubois-crypto/MyCairoPlayground/tree/main/slides}{\cyan{Slides }} ~~~~~~~~~~~~~~~~~~&   \href{https://github.com/rdubois-crypto/MyCairoPlayground}{\cyan{Cairo\&Sage }}\\
             
-           \includegraphics[width=2cm]{images/musig2_qr.jpg} & ~~~~~~~~~~~~~~~&\includegraphics[width=2.1cm]{images/cairomusig2_qr.jpg}
+           \includegraphics[width=2cm]{images/musig2_qr.jpg} & \includegraphics[width=2.1cm]{images/qrslides.jpg} &\includegraphics[width=2.1cm]{images/cairomusig2_qr.jpg}
             \\
            \end{tabular}     		
     \end{frame}
