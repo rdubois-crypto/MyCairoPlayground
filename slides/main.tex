@@ -56,10 +56,10 @@
      \begin{definition}[(Classical) Digital Signature]
      A signature scheme is a tuple of function:
      \begin{itemize}
-     \item $Setup$
-     \item $KeyGen$
-     \item $Sign$
-     \item $Verify$
+     \item $Setup$: returns $E(F_p), G, H$
+     \item $KeyGen(E(F_p), G, H, seed)$: returns $(pvk,pubk)=(x,Q)$
+     \item $Sign(x,message)$: returns $Sig$ 
+     \item $Verify(Sig,Q)$: returns {\tt true/false}
      \end{itemize}
      
      \end{definition}
@@ -89,10 +89,9 @@
    \begin{definition}[(Classical) Digital Signature]
      A multisig scheme is a tuple of function:
      \begin{itemize}
-     \item $(Setup, Keygen, Sign)$
-     \item $KeyAgg$
-     \item $SignAgg$
-     \item $Verify$
+     \item $(Setup, Keygen, Verify, Sign)$
+     \item $KeyAgg(Q_1, \ldots Q_n)$ returns $X$
+     \item $SignAgg(Sig_1, \ldots, Sig_n)$ returns $Sig$
      \end{itemize}
   \end{definition}
   }
@@ -142,12 +141,15 @@
   }
   \only<2>
   {
-   \begin{itemize}
-     \item $(Setup, Keygen, Sign)$
-     \item $KeyAgg$
-     \item $SignAgg$
-     \item $Verify$
-   \end{itemize}
+    \begin{definition}[(Classical) Digital Signature]
+     A multisig scheme is a tuple of function:
+     \begin{itemize}
+     \item $(Setup,  Verify, Sign)$
+     \item $Distributed Keygen$,
+     \item $KeyAgg(Q_1, \ldots Q_n)$ returns $X$
+     \item $SignAgg(Sig_1, \ldots, Sig_n)$ returns $Sig$
+     \end{itemize}
+  \end{definition}
      
       {
       
@@ -223,10 +225,10 @@ Verif &   $R'=sG+eQ$& $r'=(es^{-1}G+rs^{-1}Q)_x $ \\
 \only<1>
 {  
 
-Schnorr is linear in $(k,x)$ and {\red linerarity} is cool:
+Schnorr s part is linear in $(k,x)$ and {\red linerarity} is cool:
 \begin{tabular}{lllr}
-$Sig(k,x_1)+Sig(k,x_2)$&$=$& $Sig(k, x_1+x_2), $&$\forall  x=x_1+ x_2$\\
-$Sig(k_1,x)+Sig(k_2,x)$&$=$& $Sig(k, x), $&$\forall k=k_1+ k_2$\\
+$s(k,x_1)+Sig(k,x_2)$&$=$& $s(k, x_1+x_2), $&$\forall  x=x_1+ x_2$\\
+$s(k_1,x)+Sig(k_2,x)$&$=$& $s(k, x), $&$\forall k=k_1+ k_2$\\
 \end{tabular}
 
 (while ECDSA has degree two monomial in $(k,x)$)
@@ -354,8 +356,19 @@ Read \href{https://eprint.iacr.org/2020/852.pdf}{{\cyan FROST}} for full descrip
 
  \section{Use cases}
  
-\subsection{Multi factor authentication}
+\subsection{You survived !}
  
+ 
+ 
+\begin{frame}{Use cases}
+
+
+\begin{center}
+\includegraphics[width=6cm]{images/usecases.jpg}
+\end{center}           
+
+\end{frame}
+
 \begin{frame}{Multi factor authentication to Starknet Contract}
 Implement enhanced policy access to assets.
 
