@@ -9,7 +9,7 @@
         \includegraphics[width=\paperwidth,height=\paperheight]{images/fond1.jpg}
     }
 \title{Multi And Threshold Signatures for Starknet} %->->->->-> Check hyperref title <-<-<-<-<-
-\subtitle{(Warming up for Lisbon Hackaton)}
+\subtitle{(Warming up for Lisbon Hackhaton)}
 \author[R. Dubois]{\textcolor{yellow}{Renaud Dubois}}
 \institute[LIT]{
     \textcolor{white}{Ledger}%
@@ -73,8 +73,14 @@
     
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- 
+ \begin{frame}{Signatures}
+ How to aggregate several authenticators into one authentication to a smart contract ?
+ \begin{center}
+        \includegraphics[width=7cm]{images/2fa.jpg}
+        \end{center}
+  
+ \end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   \begin{frame}{Multi-signatures}
  A multi-signature is a digital signature allowing users to {\it aggregate} their keys in an aggregated public key. The signatures are also aggregated.
   Verifier API is unchanged.
@@ -112,6 +118,7 @@
   {
   \begin{alertblock}{drawback}
    \begin{itemize}
+  \item requires Schorr (not in FIDO, not NIST,  
   \item increased computational complexities for signers
   \item requires (off chain) communications between signers  
   \item computation in 2 rounds (Sig1, Sig2)
@@ -184,7 +191,7 @@ SetUP() : Pick a \href{https://github.com/LedgerHQ/speculos/blob/master/src/bolo
   \begin{center}
 \begin{tabular}{|c|c |c|}
 \hline
-Operation&Schnorr & ECDSA \\
+Operation&\includegraphics[width=1cm]{images/schnorr.jpg} & ECDSA \\
 \hline
 KeyGen &$Q=xG$        &$Q=xG$ \\
 
@@ -356,7 +363,7 @@ Read \href{https://eprint.iacr.org/2020/852.pdf}{{\cyan FROST}} for full descrip
 
  \section{Use cases}
  
-\subsection{You survived !}
+\subsection*{You survived !}
  
  
  
@@ -369,8 +376,15 @@ Read \href{https://eprint.iacr.org/2020/852.pdf}{{\cyan FROST}} for full descrip
 
 \end{frame}
 
+
+\subsection{Multi factor authentication}
+
 \begin{frame}{Multi factor authentication to Starknet Contract}
 Implement enhanced policy access to assets.
+
+\begin{center}
+\includegraphics[width=4cm]{images/2fa2.jpg}
+\end{center}
 
 \begin{exampleblock}{Access Policy}
 \begin{itemize}
@@ -378,7 +392,7 @@ Implement enhanced policy access to assets.
 \item High amount: Host (smartphone) + HW wallet (Nano) 
 \end{itemize}
 \end{exampleblock}
-
+Use WebAuthn (FIDO) into Starknet ?
 
 \end{frame} 
 
@@ -388,6 +402,11 @@ Implement enhanced policy access to assets.
 \begin{frame}{Voting system}
 Reduce risk and complexity of a contract implementing a voting system.
 A vote is adopted only though a valid TS-Sig.
+
+
+\begin{center}
+\includegraphics[width=2cm]{images/vote.jpg}
+\end{center}
 
 \begin{exampleblock}{Gnosis advanced}
 \begin{itemize}
@@ -408,26 +427,51 @@ A vote is adopted only though a valid TS-Sig.
 
 Specificities of Musig2 Starknet (ease Prover/Verifier computations)
 \begin{itemize}
+\item Addition of EC-Schnorr to Cairo contracts
 \item Uses Pedersen Hash as core hash function 
 \item Uses Starknet curve as elliptic domain
 \item Implement x-only verification
 \end{itemize} 
 The implementation is a generic one (takes hash and elliptic domain as SetUp parameter).
-The aim is to overlap with B340 if selecting P256k1 and SHA256 instead (TBD).     
+The aim is to overlap 
+\begin{itemize}
+\item with B340 if selecting P256k1 and SHA256 instead (TBD).
+\item with \href{https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-eddsa-05}{{\cyan RFC Eddsa}} if selecting Ed25519.        
+\end{itemize}
+
      
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 \begin{frame}{Ledger/Starknet Musig2}
 
-
-Current state:
+\only<1>
+{
+\begin{exampleblock}
+{Current state}
 \begin{itemize}
 \item Schnorr verification available in Cairo, 
 \item High-level simulation in Sagemath of full protocol (Sign/Verify for a pool of users) 
 \item Musig2 implementation on top of a virtualization layer (only integrating bolos for now) 
 \item currently working on thresholdization
 \end{itemize} 
+\end{exampleblock}
+}
+\only<2>
+{
+
+\begin{alertblock}
+{Next steps}
+\begin{itemize}
+\item Thresholdisation,
+\item Compatibility with Edd25519 (FIDO compliance) 
+\begin{center}
+ \includegraphics[width=2cm]{images/fido.jpg}
+ \end{center}
+\end{itemize}
+
+\end{alertblock}
+}
 
      
             \begin{tabular}{ccc}
@@ -440,7 +484,7 @@ Current state:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{frame}{Starknet Hackaton}
+\begin{frame}{Starknet Hackhaton}
 
 \begin{center}
 \includegraphics[width=6cm]{images/lisbon.png}
