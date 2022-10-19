@@ -9,19 +9,25 @@
         \includegraphics[width=\paperwidth,height=\paperheight]{images/fond1.jpg}
     }
 \title{Multi And Threshold Signatures for Starknet} %->->->->-> Check hyperref title <-<-<-<-<-
-\subtitle{(Warming up for Lisbon Hackhaton)}
-\author[R. Dubois]{\textcolor{yellow}{Renaud Dubois}}
+\subtitle{(Warming up for Lisbon Hackathon)}
+\author[R. Dubois]{\textcolor{yellow}{Renaud Dubois} }
 \institute[LIT]{
     \textcolor{white}{Ledger}%
     \\%
     \textcolor{white}{Innovation Team}%
+    \date{\today}
+    
+    
 } %You can change the Institution if you are from somewhere else
-\date{\today}
+
+
 %\logo{\includegraphics[width= 0.05\textwidth]{images/logo.png}}
 
 \begin{document}
     
-    \frame{\titlepage}
+    \frame{\titlepage }
+   
+
 %%%%%%%%%%%%         
     \begin{frame}{Summary}
      
@@ -34,6 +40,9 @@
      \only<2>
      {
         \tableofcontents
+        \begin{center}
+        \includegraphics[width=2.1cm]{images/qrslides.jpg}
+        \end{center}
       }  
 %         Reed-Solomon Proximity (RP) Problem: Given oracle access to a Reed-Solomon code $f:S\rightarrow\mathbb{F}$, the Reed-Solomon Proximity Problem asks that a verifier $V$ distinguishes between two cases with high probability: \begin{itemize}
 %                                                                                                                                                                                                                                           \item $$f\in \textbf{RS}[\mathbb{F},S,\rho]$$
@@ -51,25 +60,49 @@
 %      \begin{definition}[Wikipedia]
 %      Identity is the qualities, beliefs, personality traits, appearance, and/or expressions that characterize a person or group.
 %      \end{definition}
-     A digital signature is a mathematical scheme for verifying the authenticity of digital messages or documents.
      
-     \begin{definition}[(Classical) Digital Signature]
+     \only<1>
+     {
+       A digital signature is a mathematical scheme for verifying the authenticity of digital messages or documents.
+     	\begin{center}
+        \includegraphics[width=8cm]{images/signature.jpg}
+        \end{center}
+    
+     }
+           \only<2>{
+            \begin{definition}[(Classical) Digital Signature]
      A signature scheme is a tuple of function:
      \begin{itemize}
-     \item $Setup$: returns $E(F_p), G, H$
+     \item $Setup$: returns domain parameters $E(F_p), G, H$
      \item $KeyGen(E(F_p), G, H, seed)$: returns $(pvk,pubk)=(x,Q)$
      \item $Sign(x,message)$: returns $Sig$ 
      \item $Verify(Sig,Q)$: returns {\tt true/false}
      \end{itemize}
      
      \end{definition}
-     Most commonly used signature scheme is ECDSA (Bitcoin, Ethereum)
+     \href{https://hyperelliptic.org/EFD/g1p/auto-shortw.html}{\cyan{Formulaes}} for elliptic computations.
+     \href{https://neuromancer.sk/std/network}{\cyan{Formulaes}} 
+     
+           }
+      \only<3>
+     {
+     \begin{exampleblock}{Properties}
+       \begin{itemize}
+     \item Unforgeable
+     \item Non repudiation
+     \item {\emph{ Not reusable}}
+     \end{itemize}
+     \end{exampleblock}
+     
+      Most commonly used signature scheme is ECDSA (Bitcoin, Ethereum)
      \begin{itemize}
      \item implemented in Starknet/\href{https://github.com/starkware-libs/cairo-lang/tree/master/src/starkware/cairo/common}{\cyan{Cairo}} (P256, NTT/Stark friendly Starknet Curve)
      \item available in your favorite sdk
      \href{https://developers.ledger.com/docs/nano-app/crypto-api/ox__ec_8h/}{\cyan{Ledger}}
      
      \end{itemize} 
+     }
+    
     
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -82,17 +115,18 @@
  \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   \begin{frame}{Multi-signatures}
- A multi-signature is a digital signature allowing users to {\it aggregate} their keys in an aggregated public key. The signatures are also aggregated.
-  Verifier API is unchanged.
-  
+
   
   \only<1>{
+   A multi-signature is a digital signature allowing users to {\it aggregate} their keys in an aggregated public key. The signatures are also aggregated.
+  Verifier API is unchanged.
+  
   \begin{center}
         \includegraphics[width=11cm]{images/aggregate.png}
         \end{center}
   }
   \only<2>{
-   \begin{definition}[(Classical) Digital Signature]
+   \begin{definition}[Multi-Signatures]
      A multisig scheme is a tuple of function:
      \begin{itemize}
      \item $(Setup, Keygen, Verify, Sign)$
@@ -112,13 +146,13 @@
   \end{itemize}
   \end{exampleblock}
   
-  Example: Bitcoin Taproot, \href{https://en.bitcoin.it/wiki/BIP_0340}{\cyan{BIP340}}
+  Example: \href{https://github.com/jonasnick/bips/blob/musig2/bip-musig2.mediawiki}{\cyan{Musig2}}, compatible with \href{https://en.bitcoin.it/wiki/BIP_0340}{\cyan{BIP340}}
   }
   \only<4>
   {
   \begin{alertblock}{drawback}
    \begin{itemize}
-  \item requires Schorr (not in FIDO, not NIST,  
+  \item requires Schorr (few implementations in  crypto Libs, FIDO not in TLS) 
   \item increased computational complexities for signers
   \item requires (off chain) communications between signers  
   \item computation in 2 rounds (Sig1, Sig2)
@@ -138,17 +172,18 @@
 \begin{frame}{Threshold-signatures}
 
 
- A $(k,n)$ threshold signature (TS-Sig) is a digital signature allowing a subset (threshold) of $k$ users from $n$ to {\it aggregate} a signature . 
  
   \only<1>
   {
+   A $(k,n)$ threshold signature (TS-Sig) is a digital signature allowing a subset (threshold) of $k$ users from $n$ to {\it aggregate} a signature . 
+ 
    \begin{center}
         \includegraphics[width=12.2cm]{images/threshold.png}
         \end{center}
   }
   \only<2>
   {
-    \begin{definition}[(Classical) Digital Signature]
+    \begin{definition}[Threshold Signatures]
      A multisig scheme is a tuple of function:
      \begin{itemize}
      \item $(Setup,  Verify, Sign)$
@@ -157,19 +192,18 @@
      \item $SignAgg(Sig_1, \ldots, Sig_n)$ returns $Sig$
      \end{itemize}
   \end{definition}
-     
-      {
-      
+  }
+ \only<3>    
+  {
   \begin{exampleblock}{Advantages (over naive concatenation/trusted aggregator)}
   \begin{itemize}
   \item All of multisig ($k=n$ is equivalent)
   \item More flexibility in access policy
   \end{itemize}
   \end{exampleblock}
- 
+  Example: \href{https://eprint.iacr.org/2020/852}{\cyan{FROST}}.
   } 
-   Example: FROST(Blockstream).
- }
+   
 \end{frame}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  \subsection{Under the hood}
@@ -464,7 +498,7 @@ The aim is to overlap
 {Next steps}
 \begin{itemize}
 \item Thresholdisation,
-\item Compatibility with Edd25519 (FIDO compliance) 
+\item Compatibility with Ed25519 (FIDO compliance) 
 \begin{center}
  \includegraphics[width=2cm]{images/fido.jpg}
  \end{center}
@@ -484,7 +518,7 @@ The aim is to overlap
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{frame}{Starknet Hackhaton}
+\begin{frame}{Starknet Hackathon}
 
 \begin{center}
 \includegraphics[width=6cm]{images/lisbon.png}
