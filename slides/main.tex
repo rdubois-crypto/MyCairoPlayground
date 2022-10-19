@@ -9,7 +9,7 @@
         \includegraphics[width=\paperwidth,height=\paperheight]{images/fond1.jpg}
     }
 \title{Multi And Threshold Signatures for Starknet} %->->->->-> Check hyperref title <-<-<-<-<-
-\subtitle{(Warming up for Lisbon Hackathon)}
+\subtitle{(Warming up for Lisbon Starknet/Eth CC)}
 \author[R. Dubois]{\textcolor{yellow}{Renaud Dubois} }
 \institute[LIT]{
     \textcolor{white}{Ledger}%
@@ -81,7 +81,8 @@
      
      \end{definition}
      \href{https://hyperelliptic.org/EFD/g1p/auto-shortw.html}{\cyan{Formulaes}} for elliptic computations.
-     \href{https://neuromancer.sk/std/network}{\cyan{Formulaes}} 
+     
+     \href{https://neuromancer.sk/std/network}{\cyan{Dictionnary of curves parameters}} 
      
            }
       \only<3>
@@ -268,8 +269,8 @@ Verif &   $R'=sG+eQ$& $r'=(es^{-1}G+rs^{-1}Q)_x $ \\
 
 Schnorr s part is linear in $(k,x)$ and {\red linerarity} is cool:
 \begin{tabular}{lllr}
-$s(k,x_1)+Sig(k,x_2)$&$=$& $s(k, x_1+x_2), $&$\forall  x=x_1+ x_2$\\
-$s(k_1,x)+Sig(k_2,x)$&$=$& $s(k, x), $&$\forall k=k_1+ k_2$\\
+$s(k,x_1)+s(k,x_2)$&$=$& $s(k, x), $&$\forall  x=x_1+ x_2$\\
+$s(k_1,x)+s(k_2,x)$&$=$& $s(k, x), $&$\forall k=k_1+ k_2$\\
 \end{tabular}
 
 (while ECDSA has degree two monomial in $(k,x)$)
@@ -277,13 +278,15 @@ $s(k_1,x)+Sig(k_2,x)$&$=$& $s(k, x), $&$\forall k=k_1+ k_2$\\
  \begin{center}
 \includegraphics[width=4cm]{images/multi3d.jpg}
 \end{center}
-     
-     
-Linearity allow homomorphic additions. Idea: split X into $X=\sum a_iX_i$, k into $k=\sum k_i$.
     
 }
-
+     
 \only<2>
+{     
+Linearity allow homomorphic additions. Idea: split X into $X=\sum a_iX_i$, k into $k=\sum k_i$.
+ }
+
+\only<3>
 {
 
   \begin{center}
@@ -305,7 +308,7 @@ Sign &$s=k-xe$    & $s_i=k_i-a_ix_ie$  \\
  
  }
  
-\only<3>
+\only<4>
 {  
 Musig2 uses a vectorial nonce of length $\mu$, injected in previous Insec\_Musig scheme.
 
