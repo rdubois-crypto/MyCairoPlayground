@@ -16,7 +16,12 @@ Cairo:
 #   as specified:  _MU=2
 #   conservative: _MU=4
 
+#testing implementation of Shamir's trick
+Shamir:
+	cairo-compile multipoint.cairo --output test_multipoint.json
+	cairo-run --program=test_multipoint.json --layout=all
 
+	
 asm:
 	thoth -f test_musig2.json
 
