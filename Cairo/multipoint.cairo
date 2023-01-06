@@ -59,16 +59,20 @@ func ec_mulmuladd_inner{range_check_ptr}(R: EcPoint, G: EcPoint, Q: EcPoint, H: 
    
 
     alloc_locals;
-    let (double_point: EcPoint) = ec_double(R);
-    let mm1:felt=m-1;
-    local dibit;
-    
-   
-    //this means if m=-1, beware if felt definition changes
+      //this means if m=-1, beware if felt definition changes
     if(m == 3618502788666131213697322783095070105623107215331596699973092056135872020480){
     %{ print("\n end of recursion" ) %}
      return(res=R);
     }
+    
+    let (double_point: EcPoint) = ec_double(R);
+       %{ print("\n double" ) %}
+ 
+    let mm1:felt=m-1;
+    local dibit;
+    
+   
+  
      %{ print("\n inner mulmuladd with m=", ids.m) %}
  
     //extract MSB values of both exponents
@@ -127,21 +131,28 @@ func ec_mulmuladd_W_inner{range_check_ptr}(R: EcPoint, Prec:Window, scalar_u: fe
     }
    
     let (double_point: EcPoint) = ec_double(R);
-   
-    //still have to make the last addition over 1 bit (initial length was odd)
+       %{ print("\n double" ) %}
+ 
+     //still have to make the last addition over 1 bit (initial length was odd)
     if(m == 0){
      %{ print("\n end of recursion, one bit" ) %}
-     let (res:EcPoint)=ec_mulmuladd_inner(double_point, Prec.G, Prec.Q, Prec.W3, scalar_u, scalar_v, m);
+     let (res:EcPoint)=ec_mulmuladd_inner(R, Prec.G, Prec.Q, Prec.W3, scalar_u, scalar_v, m);
      
      return(res=res);
     }
    
     let (quadruple_point: EcPoint) = ec_double(double_point);
-    
+    %{ print("\n double" ) %}
+ 	
+ 
     //compute quadruple (8*v1 4*u1+ 2*v0 + u0)
      %{ ids.quad_bit = 8*((ids.scalar_v >>ids.m)&1) +4*((ids.scalar_u >>ids.m)&1) +2*((ids.scalar_v >>(ids.m-1))&1)+((ids.scalar_u >>(ids.m-1))&1)    %}
      %{ print("\n index=",ids.m , "quad_bit=", ids.quad_bit) %}
   
+     if(quad_bit==0){
+   	     let (res:EcPoint)=ec_mulmuladd_W_inner(quadruple_point, Prec, scalar_u, scalar_v, m-2);
+    	     return(res=res);
+     }
      if(quad_bit==1){
 	     let (ecTemp:EcPoint)=ec_add(quadruple_point,Prec.G);
 	     let (res:EcPoint)=ec_mulmuladd_W_inner(ecTemp, Prec, scalar_u, scalar_v, m-2);
@@ -399,7 +410,9 @@ func main{range_check_ptr }() {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
      %{ print("\n*******************CAIRO:Shamir's trick testing") %}//result of signature
-	  test_ecmulmuladd();
+     
+     
+     test_ecmulmuladd();
      
      %{ print("\n******************* Unitary Test 2: test mulmuladd inner on BigInt3") %}
      
