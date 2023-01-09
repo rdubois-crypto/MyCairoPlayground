@@ -25,7 +25,7 @@ from musig2 import HSig, Verif_Musig2_core, Verif_Musig2_all
 from musig2_xonly import HSig_xonly, Verif_Musig2_all_xonly, Verif_Musig2_short_xonly
 
 
-//unitary vector test generated with musig2.sage
+//unitary vector test generated with musig2.sage	
 func vec_test_core{pedersen_ptr: HashBuiltin*, ec_op_ptr:EcOpBuiltin*}()->(flag_verif:felt){
  alloc_locals;
  let (__fp__, _) = get_fp_and_pc();

@@ -53,6 +53,7 @@ struct Window {
 }
 
 
+
 //https://crypto.stackexchange.com/questions/99975/strauss-shamir-trick-on-ec-multiplication-by-scalar,
 //* Internal call for recursion of point multiplication via Shamir's trick */
 func ec_mulmuladd_inner{range_check_ptr}(R: EcPoint, G: EcPoint, Q: EcPoint, H: EcPoint,scalar_u: felt, scalar_v: felt, m: felt) -> (res: EcPoint){
@@ -61,26 +62,26 @@ func ec_mulmuladd_inner{range_check_ptr}(R: EcPoint, G: EcPoint, Q: EcPoint, H: 
     alloc_locals;
       //this means if m=-1, beware if felt definition changes
     if(m == 3618502788666131213697322783095070105623107215331596699973092056135872020480){
-    %{ print("\n end of recursion" ) %}
+    //%{ print("\n end of recursion" ) %}
      return(res=R);
     }
     
     let (double_point: EcPoint) = ec_double(R);
-       %{ print("\n double" ) %}
+    //   %{ print("\n double" ) %}
  
     let mm1:felt=m-1;
     local dibit;
     
    
   
-     %{ print("\n inner mulmuladd with m=", ids.m) %}
+    // %{ print("\n inner mulmuladd with m=", ids.m) %}
  
     //extract MSB values of both exponents
      %{ ids.dibit = ((ids.scalar_u >>ids.m)&1) +2*((ids.scalar_v >>ids.m)&1) %}
-     %{ print("\n ui=",ids.scalar_u >>ids.m, "\n vi=", ids.scalar_v >>ids.m) %}
+     //%{ print("\n ui=",ids.scalar_u >>ids.m, "\n vi=", ids.scalar_v >>ids.m) %}
     
      
-     %{ print("\n dibit=", ids.dibit) %}
+    // %{ print("\n dibit=", ids.dibit) %}
 
     	
     //set R:=R+R
@@ -126,12 +127,12 @@ func ec_mulmuladd_W_inner{range_check_ptr}(R: EcPoint, Prec:Window, scalar_u: fe
    
     
     if(m == -1){
-    %{ print("\n end of recursion, no add" ) %}
+    //%{ print("\n end of recursion, no add" ) %}
      return(res=R);
     }
    
     let (double_point: EcPoint) = ec_double(R);
-       %{ print("\n double" ) %}
+     //  %{ print("\n double" ) %}
  
      //still have to make the last addition over 1 bit (initial length was odd)
     if(m == 0){
@@ -142,12 +143,12 @@ func ec_mulmuladd_W_inner{range_check_ptr}(R: EcPoint, Prec:Window, scalar_u: fe
     }
    
     let (quadruple_point: EcPoint) = ec_double(double_point);
-    %{ print("\n double" ) %}
+    //%{ print("\n double" ) %}
  	
  
     //compute quadruple (8*v1 4*u1+ 2*v0 + u0)
      %{ ids.quad_bit = 8*((ids.scalar_v >>ids.m)&1) +4*((ids.scalar_u >>ids.m)&1) +2*((ids.scalar_v >>(ids.m-1))&1)+((ids.scalar_u >>(ids.m-1))&1)    %}
-     %{ print("\n index=",ids.m , "quad_bit=", ids.quad_bit) %}
+    // %{ print("\n index=",ids.m , "quad_bit=", ids.quad_bit) %}
   
      if(quad_bit==0){
    	     let (res:EcPoint)=ec_mulmuladd_W_inner(quadruple_point, Prec, scalar_u, scalar_v, m-2);
@@ -303,7 +304,7 @@ func ec_mulmuladd{range_check_ptr}(G: EcPoint, Q: EcPoint, scalar_u: felt, scala
     let H:EcPoint=ec_add{range_check_ptr=range_check_ptr}(G,Q);
     //recover MSB bit index
     %{ ids.m=max(ids.scalar_u.bit_length(), ids.scalar_v.bit_length())-1 %}    
-    %{ print("\n length=", ids.m) %}
+    //%{ print("\n length=", ids.m) %}
 
     //initialize R with infinity point
     let R = EcPoint(BigInt3(0, 0, 0), BigInt3(0, 0, 0));
@@ -329,97 +330,81 @@ func ec_mulmuladd_bg3{range_check_ptr}(G: EcPoint, Q: EcPoint, scalar_u: BigInt3
     
      //recover MSB bit index of high part
     %{ ids.len_hi=max(ids.scalar_u.d2.bit_length(), ids.scalar_v.d2.bit_length())-1 %}    
-    %{ print("\n length=", ids.len_hi) %}
-    let (lowR:EcPoint)=ec_mulmuladd_inner(R,G,Q,H, scalar_u.d2, scalar_v.d2, len_hi);
+    //%{ print("\n length=", ids.len_hi) %}
+    let (hiR:EcPoint)=ec_mulmuladd_inner(R,G,Q,H, scalar_u.d2, scalar_v.d2, len_hi);
 
     //recover MSB bit index of med part
     %{ ids.len_med=max(ids.scalar_u.d1.bit_length(), ids.scalar_v.d1.bit_length())-1 %}    
-    %{ print("\n length=", ids.len_med) %}
-    let (medR:EcPoint)=ec_mulmuladd_inner(lowR,G,Q,H, scalar_u.d1, scalar_v.d1, len_med);
+    //%{ print("\n length=", ids.len_med) %}
+    let (medR:EcPoint)=ec_mulmuladd_inner(hiR,G,Q,H, scalar_u.d1, scalar_v.d1, len_med);
  
     //recover MSB bit index of low part
     %{ ids.len_low=max(ids.scalar_u.d0.bit_length(), ids.scalar_v.d0.bit_length())-1 %}    
-    %{ print("\n length=", ids.len_low) %}
+    //%{ print("\n length=", ids.len_low) %}
 
-    let (hiR:EcPoint)=ec_mulmuladd_inner(medR,G,Q,H, scalar_u.d0, scalar_v.d0, len_low);
+    let (lowR:EcPoint)=ec_mulmuladd_inner(medR,G,Q,H, scalar_u.d0, scalar_v.d0, len_low);
 
-    return (res=hiR);
-}
-
-func test_ecmulmuladd{range_check_ptr }()->(res:felt){
-   %{ print("\n******************* Unitary Test 1: test mulmuladd inner on single precision scalar") %}
-     let G=EcPoint(
-            BigInt3(0xe28d959f2815b16f81798, 0xa573a1c2c1c0a6ff36cb7, 0x79be667ef9dcbbac55a06),
-            BigInt3(0x554199c47d08ffb10d4b8, 0x2ff0384422a3f45ed1229a, 0x483ada7726a3c4655da4f),
-        );
-     
-    
-     let Q:EcPoint=ec_double(G);
-
-     let scal_3=3;
-     let scal_31=31;
-     let m1=-1;	
-    
-     //compute 3G+31Q= 65G
-     let computed:EcPoint=ec_mulmuladd( G, Q, scal_3, scal_31);
-     let compX=computed.x.d0;
-     %{ print("\n Computed x=", ids.compX) %}
-     
-     let soixantecinq=BigInt3(0x41, 0x0, 0x0);
-     
-     let expected:EcPoint=ec_mul(G, soixantecinq);
-     let expX=expected.x.d0;
-     
-    
-     %{  print("\n Expected x=", ids.expX) %}
- return (res=1);
+    return (res=lowR);
 }
 
 
-func test_ecmulmuladdW{range_check_ptr }()->(res:felt){
-   %{ print("\n******************* Unitary Test 3: test mulmuladd (windowed version) on single precision scalar") %}
-     let G=EcPoint(
-            BigInt3(0xe28d959f2815b16f81798, 0xa573a1c2c1c0a6ff36cb7, 0x79be667ef9dcbbac55a06),
-            BigInt3(0x554199c47d08ffb10d4b8, 0x2ff0384422a3f45ed1229a, 0x483ada7726a3c4655da4f),
-        );
-     
-    
-     let Q:EcPoint=ec_double(G);
-
-     let scal_3=3;
-     let scal_31=31;
-     let m1=-1;	
-    
-     //compute 3G+31Q= 65G
-     let computed:EcPoint=ec_mulmuladd_W( G, Q, scal_3, scal_31);
-     let compX=computed.x.d0;
-     %{ print("\n Computed x=", ids.compX) %}
-     
-     let soixantecinq=BigInt3(0x41, 0x0, 0x0);
-     
-     let expected:EcPoint=ec_mul(G, soixantecinq);
-     let expX=expected.x.d0;
-     
-    
-     %{  print("\n Expected x=", ids.expX) %}
- return (res=1);
-}
-
-//////////// MAIN
-func main{range_check_ptr }() {
+func ec_mulmuladdW_bg3{range_check_ptr}(G: EcPoint, Q: EcPoint, scalar_u: BigInt3, scalar_v: BigInt3) -> (res: EcPoint){
     alloc_locals;
-    let (__fp__, _) = get_fp_and_pc();
-     %{ print("\n*******************CAIRO:Shamir's trick testing") %}//result of signature
-     
-     
-     test_ecmulmuladd();
-     
-     %{ print("\n******************* Unitary Test 2: test mulmuladd inner on BigInt3") %}
-     
-     test_ecmulmuladdW();
+    local len_hi; //hi 84 bits part of scalar
+    local len_med; //med 86 bits part
+    local len_low;//low bits part
     
-     return();
-     
-}     
-     
+    //Precompute a 4-bit window , W0=infty, W1=P, W2=Q, the window is indexed by (8*v1 4*u1+ 2*v0 + u0), where (u1,u0) represents two bit of scalar u, (resp for v)
+    
+    let W3:EcPoint=ec_add{range_check_ptr=range_check_ptr}(G,Q); //3:G+Q
+    let W4:EcPoint=ec_double{range_check_ptr=range_check_ptr}(G); //4:2G
+    let W5:EcPoint=ec_add{range_check_ptr=range_check_ptr}(G,W4); //5:3G
+    let W6:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W4,Q); //6:2G+Q
+    let W7:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W5,Q); //7:3G+Q
+    let W8:EcPoint=ec_double{range_check_ptr=range_check_ptr}(Q); //8:2Q
+    
+    let W9:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W8,G); //9:2Q+G
+    let W10:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W8,Q); //10:3Q
+    let W11:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W10,G); //11:3Q+G
+    let W12:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W8,W4); //12:2Q+2G
+    let W13:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W8,W5); //13:2Q+3G
+    let W14:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W10,W4); //14:3Q+2G
+    let W15:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W10,W5); //15:3Q+3G
+   
+    let PrecPoint:Window=Window( G,Q,W3, W4, W5, W6, W7, W8, W9, W10, W11, W12, W13, W14, W15);
+   
+  
+    //initialize R with infinity point
+    let R = EcPoint(BigInt3(0, 0, 0), BigInt3(0, 0, 0));
+    
+    %{ ids.len_hi=max(ids.scalar_u.d2.bit_length(), ids.scalar_v.d2.bit_length())-1 %}    
+    //%{ print("\n length=", ids.len_hi) %}
+   
+    let (hiR:EcPoint)=ec_mulmuladd_W_inner(R, PrecPoint, scalar_u.d2, scalar_v.d2, len_hi);
+    
+    let (medR:EcPoint)=ec_mulmuladd_W_inner(hiR, PrecPoint, scalar_u.d1, scalar_v.d1, 85);
+    
+    let (lowR:EcPoint)=ec_mulmuladd_W_inner(medR, PrecPoint, scalar_u.d0, scalar_v.d0, 85);
+   
+   
+    return (res=lowR);	
+    
+
+}
+
+
+//non optimized version of uG+vQ
+func ec_mulmuladd_naive{range_check_ptr}(G: EcPoint, Q: EcPoint, scalar_u: BigInt3, scalar_v: BigInt3) -> (res: EcPoint){
+  alloc_locals;
+ 
+  let uG:EcPoint=ec_mul(G,scalar_u);
+  let vQ:EcPoint=ec_mul(Q,scalar_v);
+  let res:EcPoint=ec_add(uG,vQ);
+  return (res=res);
+
+}
+
+
+
+
 

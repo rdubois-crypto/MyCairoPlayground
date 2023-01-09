@@ -18,9 +18,15 @@ Cairo:
 
 #testing implementation of Shamir's trick
 Shamir:
-	cairo-compile multipoint.cairo --output test_multipoint.json
+	cairo-compile test/test_multipoint.cairo --output test_multipoint.json
 	cairo-run --program=test_multipoint.json --layout=all
 
+Bench:
+	cairo-compile bench/bench_ecmulmuladd_naive.cairo --output test_bench.json
+	cairo-run --print_info --program=test_bench.json --layout=all>>bench.dat
+	
+	cairo-compile bench/bench_ecmulmuladd_trickWindow.cairo --output test_bench.json
+	cairo-run --print_info --program=test_bench.json --layout=all>>bench.dat
 	
 asm:
 	thoth -f test_musig2.json
