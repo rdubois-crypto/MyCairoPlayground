@@ -29,7 +29,7 @@ from starkware.cairo.common.cairo_secp.field import (
 from starkware.cairo.common.cairo_secp.constants import BETA, N0, N1, N2
 from starkware.cairo.common.cairo_secp.ec import EcPoint, ec_add, ec_mul, ec_negate, ec_double
 
-from multipoint import ec_mulmuladd_W, ec_mulmuladd, ec_mulmuladd_naive, ec_mulmuladdW_bg3
+from ec_mulmuladd import ec_mulmuladd_W, ec_mulmuladd, ec_mulmuladd_naive, ec_mulmuladdW_bg3
 
 
 func test_ecmulmuladd{range_check_ptr }()->(res:felt){

@@ -15,6 +15,18 @@ Cairo:
 # modify _MU value to increase the vector size (related to security):
 #   as specified:  _MU=2
 #   conservative: _MU=4
+
+#testing implementation of Shamir's trick
+Shamir:
+	cairo-compile test/test_ec_mulmuladd.cairo --output test_ec_mulmuladd.json
+	cairo-run --program=test_ec_mulmuladd.json --layout=all
+
+Bench:
+	cairo-compile bench/bench_ecmulmuladd_naive.cairo --output test_bench.json
+	cairo-run --print_info --program=test_bench.json --layout=all>>bench.dat
+	
+	cairo-compile bench/bench_ecmulmuladd_trickWindow.cairo --output test_bench.json
+	cairo-run --print_info --program=test_bench.json --layout=all>>bench.dat
 	
 asm:
 	thoth -f test_musig2.json

@@ -28,10 +28,10 @@ from starkware.cairo.common.cairo_secp.field import (
 from starkware.cairo.common.cairo_secp.constants import BETA, N0, N1, N2
 from starkware.cairo.common.cairo_secp.ec import EcPoint, ec_add, ec_mul, ec_negate, ec_double
 
-from multipoint import  ec_mulmuladdW_bg3
+from ec_mulmuladd import  ec_mulmuladd_naive
 
 
-func bench_mulmuladdW_bg3{range_check_ptr }(G:EcPoint, scalar_u: BigInt3, scalar_v: BigInt3)->(res:EcPoint){
+func bench_naive{range_check_ptr }(G:EcPoint, scalar_u: BigInt3, scalar_v: BigInt3)->(res:EcPoint){
     alloc_locals;
 //* parameters for 256k1:
 //https://en.bitcoin.it/wiki/Secp256k1
@@ -46,7 +46,7 @@ func bench_mulmuladdW_bg3{range_check_ptr }(G:EcPoint, scalar_u: BigInt3, scalar
 
 
  //(qG)+(q-2)*G shall be equal to P using Fermat theorem
- let res:EcPoint=ec_mulmuladdW_bg3(G,Q,scalar_u, scalar_v); 
+ let res:EcPoint=ec_mulmuladd_naive(G,Q,scalar_u, scalar_v); 
   
  if(res.x.d0!=G.x.d0){
    %{  print("\n error in bench !!") %}
@@ -60,7 +60,7 @@ func bench_mulmuladdW_bg3{range_check_ptr }(G:EcPoint, scalar_u: BigInt3, scalar
 
 //////////// MAIN
 func main{range_check_ptr }() {
- %{ print("\n***************** Benching ecmulmuladd: Shamir's trick+Window") %}
+ %{ print("\n***************** Benching ecmulmuladd: naive") %}
 
  let G=EcPoint(
             BigInt3(0xe28d959f2815b16f81798, 0xa573a1c2c1c0a6ff36cb7, 0x79be667ef9dcbbac55a06),
@@ -75,9 +75,9 @@ func main{range_check_ptr }() {
   //let scalar_u=BigInt3(0x8a03bbfd25e8cd0364141 , 0x3ffffffffffaeabb739abd, 0xfffffffffffffffffffff);
   let scalar_v=BigInt3(0x8a03bbfd25e8cd0364142 , 0x3ffffffffffaeabb739abd, 0xfffffffffffffffffffff);
 
-  let R1:EcPoint=bench_mulmuladdW_bg3(G, scalar_u, scalar_v);
-  let R2:EcPoint=bench_mulmuladdW_bg3(R1, scalar_u, scalar_v);
-  let R3:EcPoint=bench_mulmuladdW_bg3(R2, scalar_u, scalar_v);
+  let R1:EcPoint=bench_naive(G, scalar_u, scalar_v);
+  let R2:EcPoint=bench_naive(R1, scalar_u, scalar_v);
+  let R3:EcPoint=bench_naive(R2, scalar_u, scalar_v);
 
   %{  print("\n bench terminate without error") %}
   
