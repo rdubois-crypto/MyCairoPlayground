@@ -13,7 +13,6 @@
 //Windowing method : https://en.wikipedia.org/wiki/Exponentiation_by_squaring, section 'sliding window'
 //The implementation use a 2 bits window with trick, leading to a 16 points elliptic point precomputation
 
-%builtins range_check
 
 from starkware.cairo.common.cairo_builtins import EcOpBuiltin 
 from starkware.cairo.common.registers import get_ap

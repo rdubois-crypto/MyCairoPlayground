@@ -2,9 +2,12 @@
 
 ## This is a simple makefile to fasten Musig2 compilation and testing
 
-
-#compile Cairo and Sage and Compare Results
-Cairo:
+clean:
+	rm *.json *.dat
+	
+#Musig2 verification (Schnorr)
+Musig2:
+	clean
 	cairo-compile test_musig2.cairo --output test_musig2.json
 	cairo-run --program=test_musig2.json --layout=all
 
@@ -19,7 +22,19 @@ Cairo:
 asm:
 	thoth -f test_musig2.json
 
+Test_mulmuladd:
+	clean
+	cairo-compile cairo_secp/tests/test_ec_mulmuladd_secp256k1.cairo --output test_ec_mulmuladd_secp256k1.json
+	cairo-run --program=test_ec_mulmuladd_secp256k1.json --layout=all
 
+
+Bench_mulmuladd:
+	cairo-compile cairo_secp/bench/bench_ecmulmuladd_naive.cairo --output test_bench_secp256k1.json
+	cairo-run --print_info --program=test_bench_secp256k1.json --layout=all>>bench_secp256k1.dat
+	cairo-compile cairo_secp/bench/bench_ecmulmuladd_secp256k1.cairo --output test_bench_secp256k1.json
+	cairo-run --print_info --program=test_bench_secp256k1.json --layout=all>>bench.dat
+	rm test_bench_secp256k1.json
+	
 default:
 	Cairo
 
