@@ -21,14 +21,38 @@ Musig2:
 	
 asm:
 	thoth -f test_musig2.json
+	
 
 Test_mulmuladd:
+	@echo "\n ----sec256r1:"
+	cd cairo_secp256r1/; cairo-compile tests/test_ec_mulmuladd_secp256r1.cairo --output ../build/test_ec_mulmuladd_secp256r1.json
+	cairo-run --program=build/test_ec_mulmuladd_secp256r1.json --layout=all
+
+
+	@echo "Test ecmulmul_add:"
+	@echo "\n ----Stark curve:"
+	cairo-compile tests/test_mulmuladd_stark.cairo --output build/test_ec_mulmuladd_stark.json
+	cairo-run --program=build/test_ec_mulmuladd_stark.json --layout=all
+
+	@echo "\n ----sec256k1:"
 	cairo-compile cairo_secp/tests/test_ec_mulmuladd_secp256k1.cairo --output build/test_ec_mulmuladd_secp256k1.json
 	cairo-run --program=build/test_ec_mulmuladd_secp256k1.json --layout=all
 
-
+	
+	
 Bench_mulmuladd:
 	##bench sec256k1
+	@echo "Bench ecmulmul_add:"
+	@echo "\n ----Stark curve:"
+	
+	cairo-compile tests/bench_mulmuladd_stark_naive.cairo --output build/test_bench_stark.json	
+	cairo-run --print_info --program=build/test_bench_stark.json --layout=all>>bench/bench_stark.dat
+
+	cairo-compile tests/bench_mulmuladd_stark_opti.cairo --output build/test_bench_stark.json	
+	cairo-run --print_info --program=build/test_bench_stark.json --layout=all>>bench/bench_stark.dat
+
+	@echo "\n ----sec256k1:"
+
 	cairo-compile cairo_secp/bench/bench_ecmulmuladd_naive.cairo --output build/test_bench_secp256k1.json
 	cairo-run --print_info --program=build/test_bench_secp256k1.json --layout=all>>bench/bench_secp256k1.dat
 	cairo-compile cairo_secp/bench/bench_ecmulmuladd_secp256k1.cairo --output test_bench_secp256k1.json
@@ -36,5 +60,5 @@ Bench_mulmuladd:
 	rm test_bench_secp256k1.json
 	
 default:
-	Cairo
+	Musig2
 

@@ -29,8 +29,11 @@ from starkware.cairo.common.cairo_secp.field import (
     unreduced_sqr,
     verify_zero,
 )
-from starkware.cairo.common.cairo_secp.constants import BETA, N0, N1, N2
-from starkware.cairo.common.cairo_secp.ec import EcPoint, ec_add, ec_mul, ec_negate, ec_double
+
+
+//Note that this line is the only modification for the core of mulmuladd, please report any modification to 256r1, 256k1 and starkcurve.
+from starkware.cairo.common.ec_point import EcPoint
+from starkware.cairo.common.ec import ec_add, ec_mul, ec_double
 
 //Structure storing all aP+b.Q for (a,b) in [0..3]x[0..3]
 struct Window {
@@ -231,32 +234,32 @@ func ec_mulmuladd_W{range_check_ptr}(G: EcPoint, Q: EcPoint, scalar_u: felt, sca
     local m;
     //Precompute a 4-bit window , W0=infty, W1=P, W2=Q, the window is indexed by (8*v1 4*u1+ 2*v0 + u0), where (u1,u0) represents two bit of scalar u, (resp for v)
     
-    let W3:EcPoint=ec_add{range_check_ptr=range_check_ptr}(G,Q); //3:G+Q
-    let W4:EcPoint=ec_double{range_check_ptr=range_check_ptr}(G); //4:2G
-    let W5:EcPoint=ec_add{range_check_ptr=range_check_ptr}(G,W4); //5:3G
-    let W6:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W4,Q); //6:2G+Q
-    let W7:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W5,Q); //7:3G+Q
-    let W8:EcPoint=ec_double{range_check_ptr=range_check_ptr}(Q); //8:2Q
+    let W3:EcPoint=ec_add(G,Q); //3:G+Q
+    let W4:EcPoint=ec_double(G); //4:2G
+    let W5:EcPoint=ec_add(G,W4); //5:3G
+    let W6:EcPoint=ec_add(W4,Q); //6:2G+Q
+    let W7:EcPoint=ec_add(W5,Q); //7:3G+Q
+    let W8:EcPoint=ec_double(Q); //8:2Q
     
-    let W9:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W8,G); //9:2Q+G
-    let W10:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W8,Q); //10:3Q
-    let W11:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W10,G); //11:3Q+G
-    let W12:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W8,W4); //12:2Q+2G
-    let W13:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W8,W5); //13:2Q+3G
-    let W14:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W10,W4); //14:3Q+2G
-    let W15:EcPoint=ec_add{range_check_ptr=range_check_ptr}(W10,W5); //15:3Q+3G
+    let W9:EcPoint=ec_add(W8,G); //9:2Q+G
+    let W10:EcPoint=ec_add(W8,Q); //10:3Q
+    let W11:EcPoint=ec_add(W10,G); //11:3Q+G
+    let W12:EcPoint=ec_add(W8,W4); //12:2Q+2G
+    let W13:EcPoint=ec_add(W8,W5); //13:2Q+3G
+    let W14:EcPoint=ec_add(W10,W4); //14:3Q+2G
+    let W15:EcPoint=ec_add(W10,W5); //15:3Q+3G
    
     let PrecPoint:Window=Window( G,Q,W3, W4, W5, W6, W7, W8, W9, W10, W11, W12, W13, W14, W15);
    
      //[ap]=0, ap++;
      
-     //let test:EcPoint=ec_add{range_check_ptr=range_check_ptr}(Window_Points[0],Window_Points[1]); //15:3Q+3G
+     //let test:EcPoint=ec_add(Window_Points[0],Window_Points[1]); //15:3Q+3G
   
     //recover MSB bit index
     %{ ids.m=max(ids.scalar_u.bit_length(), ids.scalar_v.bit_length())-1 %}    
     %{ print("\n window scalar length=", ids.m) %}
     //initialize R with infinity point
-    let R = EcPoint(BigInt3(0, 0, 0), BigInt3(0, 0, 0));
+    let R = EcPoint(0,0);
    
     let (resu:EcPoint)=ec_mulmuladd_W_inner(R, PrecPoint, scalar_u, scalar_v, m);
    
@@ -271,13 +274,13 @@ func ec_mulmuladd{range_check_ptr}(G: EcPoint, Q: EcPoint, scalar_u: felt, scala
     alloc_locals;
     local m;
     //Precompute H=P+Q
-    let H:EcPoint=ec_add{range_check_ptr=range_check_ptr}(G,Q);
+    let H:EcPoint=ec_add(G,Q);
     //recover MSB bit index
     %{ ids.m=max(ids.scalar_u.bit_length(), ids.scalar_v.bit_length())-1 %}    
     //%{ print("\n length=", ids.m) %}
 
     //initialize R with infinity point
-    let R = EcPoint(BigInt3(0, 0, 0), BigInt3(0, 0, 0));
+    let R = EcPoint(0,0);
     let (resu:EcPoint)=ec_mulmuladd_inner(R,G,Q,H, scalar_u, scalar_v, m);
    
      return (res=resu);
@@ -287,11 +290,11 @@ func ec_mulmuladd{range_check_ptr}(G: EcPoint, Q: EcPoint, scalar_u: felt, scala
 
 
 //non optimized version of uG+vQ
-func ec_mulmuladd_naive{range_check_ptr}(G: EcPoint, Q: EcPoint, scalar_u: BigInt3, scalar_v: BigInt3) -> (res: EcPoint){
+func ec_mulmuladd_naive{ec_op_ptr: EcOpBuiltin*}(G: EcPoint, Q: EcPoint, scalar_u: felt, scalar_v: felt) -> (res: EcPoint){
   alloc_locals;
  
-  let uG:EcPoint=ec_mul(G,scalar_u);
-  let vQ:EcPoint=ec_mul(Q,scalar_v);
+  let uG:EcPoint=ec_mul(scalar_u, G);
+  let vQ:EcPoint=ec_mul(scalar_v, Q);
   let res:EcPoint=ec_add(uG,vQ);
   return (res=res);
 
