@@ -31,7 +31,7 @@ from starkware.cairo.common.cairo_secp.field import (
 )
 from starkware.cairo.common.cairo_secp.constants import BETA, N0, N1, N2
 from starkware.cairo.common.cairo_secp.ec import EcPoint, ec_add, ec_mul, ec_negate, ec_double
-from ec_mulmuladd import ec_mulmuladd_inner, ec_mulmuladd_W_inner, Window
+from cairo_secp.ec_mulmuladd import ec_mulmuladd_inner, ec_mulmuladd_W_inner, Window
 
 
 

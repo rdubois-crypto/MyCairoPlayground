@@ -219,7 +219,7 @@ let scalar_u=BigInt3(0x8a03bbfd25e8cd0364140 , 0x3ffffffffffaeabb739abd, 0xfffff
 //let scalar_u=BigInt3(0x8a03bbfd25e8cd0364141 , 0x3ffffffffffaeabb739abd, 0xfffffffffffffffffffff);
 let scalar_v=BigInt3(0x8a03bbfd25e8cd0364142 , 0x3ffffffffffaeabb739abd, 0xfffffffffffffffffffff);
 
- //(qG)+(q-2)*G shall be equal to P using Fermat theorem
+ //(N-1)G+(N+1)*G shall be equal to P using Fermat theorem
  let res:EcPoint=ec_mulmuladdW_bg3(G,Q,scalar_u, scalar_v); 
 
 
@@ -239,7 +239,7 @@ func main{range_check_ptr }() {
     let (__fp__, _) = get_fp_and_pc();
     
     
-     %{ print("\n*******************CAIRO:Shamir's trick testing") %}//result of signature
+     %{ print("\n*******************CAIRO:Shamir's trick+Windowing testing over sec156k1") %}//result of signature
     
     
     test_naive();
