@@ -33,7 +33,7 @@ from src.param_def import N0, N1, N2, GX0, GX1, GX2, GY0, GY1, GY2
 from src.ec_mulmuladd import ec_mulmuladd_W, ec_mulmuladd, ec_mulmuladd_naive
 from src.ec_mulmuladd_secp256r1 import  ec_mulmuladdW_bg3
 from src.ecdsa_opti import verify_ecdsa_opti
-from src.ecdsa import verify_ecdsa
+
 
 
 func test_verify_ecdsa_opti{range_check_ptr}() {
@@ -57,10 +57,10 @@ func main{ range_check_ptr}() {
     let (__fp__, _) = get_fp_and_pc();
     
     
-     %{ print("\n*******************CAIRO:Shamir's trick+Windowing testing over sec256r1") %}//result of signature
+     %{ print("\n ECDSA optimized  over sec256r1") %}//result of signature
     
     
-    test_verify_ecdsa_opti{syscall_ptr=, range_check_ptr=, pedersen_ptr=}();
+    test_verify_ecdsa_opti();
    
     
     return(); 

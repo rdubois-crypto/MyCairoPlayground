@@ -39,7 +39,7 @@ func validate_signature_entry{range_check_ptr}(val: BigInt3) {
 // Verifies a ECDSA signature.
 // Soundness assumptions:
 // * All the limbs of public_key_pt.x, public_key_pt.y, msg_hash are in the range [0, 3 * BASE).
-func verify_ecdsa{range_check_ptr}(
+func verify_ecdsa_opti{range_check_ptr}(
     public_key_pt: EcPoint, msg_hash: BigInt3, r: BigInt3, s: BigInt3
 ) {
     alloc_locals;
@@ -89,8 +89,12 @@ func verify_ecdsa{range_check_ptr}(
 	//    let (gen_u1) = ec_mul(gen_pt, u1);
 	//    let (pub_u2) = ec_mul(public_key_pt, u2);
 	//    let (res) = ec_add(gen_u1, pub_u2);
-	ec_mulmuladdW_bg3(gen_pt, public_key_pt, u1, u2);
+	 let (res:EcPoint) =ec_mulmuladdW_bg3(gen_pt, public_key_pt, u1, u2);
 
+	//let computed=res.x.d0;
+	//let expected=r.d0;
+	
+     //%{ print("\n computed=",ids.computed, "expected=",ids.expected) %}//result of signature
 
     // The following assert also implies that res is not the zero point.
     assert res.x = r;
