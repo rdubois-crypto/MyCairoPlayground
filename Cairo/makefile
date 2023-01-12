@@ -24,6 +24,7 @@ asm:
 	
 
 Test_mulmuladd:
+	@echo "\n ----Test MulMulAdd optimization:"
 	@echo "\n ----sec256r1:"
 	cd cairo_secp256r1/; cairo-compile tests/test_ec_mulmuladd_secp256r1.cairo --output ../build/test_ec_mulmuladd_secp256r1.json
 	cairo-run --program=build/test_ec_mulmuladd_secp256r1.json --layout=all
@@ -39,6 +40,12 @@ Test_mulmuladd:
 	cairo-run --program=build/test_ec_mulmuladd_secp256k1.json --layout=all
 
 	
+Test_ecdsa_opti:
+@echo "\n ----Test ECDSA optimization:"
+	@echo "\n ----sec256r1:"
+	cd cairo_secp256r1/;cairo-compile tests/test_ecdsa_opti.cairo --output ../build/test_ecdsa_secp256r1.json
+	cairo-run --program=build/test_ec_mulmuladd_secp256r1.json --layout=all
+
 	
 Bench_mulmuladd:
 	##bench sec256k1

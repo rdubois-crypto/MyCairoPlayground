@@ -9,11 +9,13 @@ The implemented content is:
 ec_mulmuladd.cairo: an implementation of the operation aP+bQ (addition of the results of two distincts point multiplication by scalar a and b). It uses the Shamir's trick with the windowing method.
 signature_opt.cairo : optimisation of ECDSA verification using ec_mulmuladd_W function
 
-cairo_secp : optimization of the ECDSA function over sec256k1, using starkware implementation with ec_mulmuladdW_sec256k1
+cairo_secp : optimization of the ECDSA function over sec256k1, using starkware implementation with ec_mulmuladdW_sec256k1 (original implementation from Starkware commons here:https://github.com/https://github.com/starkware-libs/cairo-lang/tree/master/src/starkware/cairo/common/cairo_secp)
 
-cairo_secp256k1 : optimization of the ECDSA function over sec256k1 using ec_mulmuladdW_sec256r1
+cairo_secp256k1 : optimization of the ECDSA function over sec256k1 using ec_mulmuladdW_sec256r1 (original implementation from Cartridge here:https://github.com/cartridge-gg/cairo-secp256r1).
 
-musig2: implementation of the Schnorr verification algorithm. Please note that it is a custom implementation (cryptographically equivalent, but not identical to BlockStream implementation)
+
+musig2: Original implementation of the Schnorr verification algorithm. Please note that it is a custom implementation (cryptographically equivalent, but not identical to BlockStream implementation).
+Namely arbitrary domain separator, choice of hash, byte ordering and annoying little choices are not compatible with Musig2 BIP proposal.
 
 ### Directory Sage:
 The Musig2 signer implementation in sagemath language, compatible with the musig2.cairo verifier. 
