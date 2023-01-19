@@ -35,22 +35,28 @@ bls12_curve=	Init_Curve(bls12_p, bls12_a, bls12_b, bls12_Gx, bls12_Gy, bls12_ord
 
 #bitsize of sha256 output
 _SHA256_T1=256
+OK=0
+KO=1
 ##################################################################
 ################################# HASHING
 ##################################################################
 #/*https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-13#name-bls12-381-g1 specifies use of SHA256 for H*/
 ##################################################################
 ##################################################################
-
-def int_to_ascii_hash(int_a, length)
+#Convert an int to the input of sha function
+def int_to_ascii_hash(int_a, length):
 cpt=bin(i)[2:]).zfill(length);
 bin_to_ascii(cpt).encode();
+
+#returns a nonce in [0..Boud-1]
+def get_nonce(Bound):
+return random_int(0,Bound-1) 
 
 #################################
 #Hash_onG1
 #################################
 #Hash on curve
-def Hash_onG1(String_m, q, b)
+def Hash_onG1(String_m, q, b):
 Fq=GF(q);
 flag=false;
 
@@ -77,7 +83,7 @@ return x, Gy
 #################################
 #Hash_pre
 #################################
-def HG1_pre(String_m, q, b)
+def HG1_pre(String_m, q, b):
 
 Fq=GF(q);
 flag=false;
@@ -106,7 +112,7 @@ return sc, yc
 #################################
 #Deriv B
 #################################
-Deriv_B(sc,yc)
+Deriv_B(sc,yc):
 
 sha = hashlib.sha256()
 sha.update(sc.encode())
@@ -123,25 +129,42 @@ B=curve([x,yc]);
 return B
 
 ##################################################################
+################################# SETUP
+##################################################################
+#Description: this function generates the secret and public parameters
+# of the Issuer. All privacy security depends on the sk generated.
+
+def SetUp(Curve,q, sk_x, sk_y):
+#1. Randomly generated ECDAA Issuer private key isk=(x,y) with 
+#[x,y=RAND(p)]
+sk_x=
+
+
+
+##################################################################
 ################################# JOIN
 ##################################################################
 # The join algorithm is split in 4 steps:
 # Step 2-3: Issuer generates credential B
 # Step 4-8: Authenticator generates secret key and Proof of Knowledge
 # Step 9-12: Issuers issues credential A,B,C,D
-# Step 13+: Authenticator checks validity of received credentials
+# Step 13+: ASM/Authenticator checks validity of received credentials
 
-def get_nonce(Bound)
-return random_int(0,Bound-1) 
 
-def Issuer_Join_Generate_B(Curve, q))
+
+
+def Issuer_Join_Generate_B(Curve, q)):
 #2.The ECDAA Issuer chooses a nonce BigInteger m=RAND(p)
 nonce=get_nonce(q);
 #3.The ECDAA Issuer computes the B value of the credential as B
 sc, yc = HG1_pre(nonce, q, b);
 B=Curve[0]([sc, yc]);
 
-def Authenticator_Join_GenPriv( Curve, q, sc,yc)
+
+
+
+
+def Authenticator_Join_GenPriv( Curve, q, sc,yc):
 #4. The authenticator chooses and stores the ECDAA private key BigInteger )sk=RAND(p)
 sk=get_nonce(q)
 #5.The authenticator re-computes B = (H(sc),yc)
@@ -177,16 +200,52 @@ sha = hashlib.sha256()
 nn=int_to_ascii_hash(n, 384);
 cc2=int_to_ascii_hash(c2, _SHA256_T1);
 sha.update(cc2);
+c1=int('0x'+sha.hexdigest())
 #7.6. BigInteger s​1​​ =r​1​​ +c​1​​ ⋅sk
 s1=r1+c1*sk;
 #8 Authenticator sends Q, c1,s1,n to Issuer
 return[sk,Q, c1, s1, n]; 
 
+#input (sk_x, sk_y): issuer secret key
+def Issuer_Gen_Credentials(sk_y, m, B, Q, c1, s1, n)
+#7.10 The ECDAA Issuer verifies that Q∈G​1 ​​  and verifies H(n∣H(B​s​1​​​ ⋅Q​−c​1​​ ∣P1​​ ∣Q∣m))​=​?​c​1
+​​sha = hashlib.sha256()
+U1=s1*B+c1*Q; ##=U1 = B​s​1​​​ ⋅Q​−c​1​​
+sha = hashlib.sha256()
+U1_x=int_to_ascii_hash(U1[0], 384);
+sha.update(U1_x);
+U1_y=int_to_ascii_hash(U1[0], 384);
+sha.update(U1_y);
+P1_Y=int_to_ascii_hash(Curve[1][1], 384);
+sha.update(P1_y);
+Q_x=int_to_ascii_hash(Q[0], 384);
+sha.update(Q_x);
+Q_y=int_to_ascii_hash(Q[1], 384);
+sha.update(Q_y);
+sha.update(m);
+c2=int('0x'+sha.hexdigest())
 
-##The ECDAA Issuer chooses a nonce BigInteger m=RAND(p).
+nn=int_to_ascii_hash(n, 384);
+cc2=int_to_ascii_hash(c2, _SHA256_T1);
+c1_computed=int('0x'+sha.hexdigest())
+if(c1_computed!=c1)
+ return [KO,0,0,0,0];
+#7.11 The ECDAA Issuer creates credential (A,B,C,D) as follows
+#7.11.1 A=B^(1/y)
+A=(Fq(sk_y)^-1)*B;
+#7.11.2 B, la réponse B B=B
+#7.11.3 C=(A*Q)^x;
+C=sk_x*(A+Q);
+return [A,C];
+
+#
+def Authenticator_CheckCredentials()
+return [OK];
 
 
-
+##################################################################
+################################# SIGN
+##################################################################
 
 
 

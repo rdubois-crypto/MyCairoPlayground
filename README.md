@@ -18,8 +18,6 @@ musig2: Original implementation of the Schnorr verification algorithm. Please no
 Namely arbitrary domain separator, choice of hash, byte ordering and annoying little choices are not compatible with Musig2 BIP proposal.
 
 ### Directory Sage:
-The Musig2 signer implementation in sagemath language, compatible with the musig2.cairo verifier. 
-
 
 ### Directory slides:
 A beamer presentation of the Musig2 multisignature protocol.

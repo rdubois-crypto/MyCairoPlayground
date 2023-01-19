@@ -3,7 +3,7 @@
 ## This is a simple makefile to fasten Musig2 compilation and testing
 
 clean:
-	rm *.json bench/*.dat
+	rm build/*.json bench/*.dat
 	
 #Musig2 verification (Schnorr)
 Musig2:
@@ -41,10 +41,21 @@ Test_mulmuladd:
 
 	
 Test_ecdsa_opti:
-@echo "\n ----Test ECDSA optimization:"
+	@echo "\n ----Test and Bench ECDSA optimization:"
+	
+	@echo "\n ----sec256k1:"
+	cairo-compile cairo_secp/tests/bench_ecdsa256k1_naive.cairo --output build/bench_ecdsa_secp256k1.json
+	cairo-run --print_info --program=build/bench_ecdsa_secp256k1.json --layout=all >>bench/ecdsa_secp256k1.dat
+	cairo-compile cairo_secp/tests/bench_ecdsa256k1_opti.cairo --output build/bench_ecdsa_secp256k1.json
+	cairo-run --print_info --program=build/bench_ecdsa_secp256k1.json --layout=all >>bench/ecdsa_secp256k1.dat
+	
+
 	@echo "\n ----sec256r1:"
-	cd cairo_secp256r1/;cairo-compile tests/test_ecdsa_opti.cairo --output ../build/test_ecdsa_secp256r1.json
-	cairo-run --program=build/test_ec_mulmuladd_secp256r1.json --layout=all
+	cd cairo_secp256r1/;cairo-compile tests/test_bench_ecdsa_opti.cairo --output ../build/test_ecdsa_secp256r1.json
+	cairo-run --print_info --program=build/test_ecdsa_secp256r1.json --layout=all >>bench/ecdsa_secp256r1.dat
+
+	cd cairo_secp256r1/;cairo-compile tests/test_bench_ecdsa.cairo --output ../build/test_ecdsa_secp256r1.json
+	cairo-run --print_info --program=build/test_ecdsa_secp256r1.json --layout=all >>bench/ecdsa_secp256r1.dat
 
 	
 Bench_mulmuladd:

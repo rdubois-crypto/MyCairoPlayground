@@ -34,6 +34,7 @@ from starkware.cairo.common.cairo_secp.field import (
 //Note that this line is the only modification for the core of mulmuladd, please report any modification to 256r1, 256k1 and starkcurve.
 from starkware.cairo.common.ec_point import EcPoint
 from starkware.cairo.common.ec import ec_add, ec_mul, ec_double
+from cairo_secp.ec_mulmuladd_secp256k1 import ec_mulmuladdW_bg3
 
 //Structure storing all aP+b.Q for (a,b) in [0..3]x[0..3]
 struct Window {
