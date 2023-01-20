@@ -1,0 +1,18 @@
+
+ ECDSA test standard implementation over sec256k1
+Number of steps: 190047 (originally, 190047)
+Used memory cells: 199034
+Register values after execution:
+pc = 4:0
+ap = 1:179817
+fp = 3:0
+
+
+ ECDSA test optimized implementation over sec256k1
+Number of steps: 112647 (originally, 112647)
+Used memory cells: 118169
+Register values after execution:
+pc = 4:0
+ap = 1:105075
+fp = 3:0
+

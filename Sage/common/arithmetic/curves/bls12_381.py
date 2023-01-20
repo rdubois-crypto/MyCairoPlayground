@@ -2,14 +2,13 @@
 ##/* Copyright (C) 2022 - Renaud Dubois - This file is part of cairo_musig2 project	 */
 ##/* License: This software is licensed under a dual BSD and GPL v2 license. 	 */
 ##/* See LICENSE file at the root folder of the project.				 */
-##/* FILE: musig2.sage							             	  */
+##/* FILE: bls12_381.py							             	  */
 ##/* 											  */
 ##/* 											  */
-##/* DESCRIPTION: ECDAA algorithm*/
+##/* DESCRIPTION: bls12_381 Ethereum curve*/
 ##/* This is a high level simulation for validation purpose				  */
 ##/* 
-##https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-ecdaa-algorithm-v2.0-id-20180227.html#ecdaa-join-algorithm           				  */
-##/* note that some constant aggregating values could be precomputed			  */
+#/* note that some constant aggregating values could be precomputed			  */
 ##**************************************************************************************/
 from sage.all_cmdline import *   # import sage library
 
@@ -27,10 +26,6 @@ from external.Pairings.pairing import *
 ############## Precomputed constants for BLS12_381
 
 
-
-
-
-  
 
 #preparse("QQx.<x> = QQ[]")
 QQx = QQ['x']; (x,) = QQx._first_ngens(1)
