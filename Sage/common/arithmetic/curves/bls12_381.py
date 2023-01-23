@@ -74,8 +74,10 @@ def map_Fp12M_Fp12M_A(x):
         # i <-> wM^6-1 = SM^6-1 and wM <-> SM
         #return sum([sum([yj*(SM**6-1)**j for j,yj in enumerate(xi.polynomial())]) * SM**i for i,xi in enumerate(x.list())])
         return sum([xi.polynomial()((SM**6-1)) * SM**e for e,xi in enumerate(x.list())])
-  
-def _e(P,Q):
+
+
+#this is the function you want:  
+def e(P,Q):
   return ate_pairing_bls12_aklgl(Q, P, E2.a6(), u0, Fp12M, map_Fp12M_Fp12M_A, False)
 
 
