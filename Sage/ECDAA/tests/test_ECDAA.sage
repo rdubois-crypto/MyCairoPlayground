@@ -13,9 +13,14 @@
 ##**************************************************************************************/
 from sage.crypto.util import bin_to_ascii
 
+
+#uncomment the curve to be used
+#BLS12_381 : future of Ethereum
 from common.arithmetic.curves.bls12_381 import *
-from ECDAA.ecdaa import *
-#'u':0x44e992b44a6909f1
+#ALTBN128 aka BN254 : future of Ethereum
+from common.arithmetic.curves.atlbn12.py import *
+
+
 
 if __name__ == "__main__":
     arithmetic(False)

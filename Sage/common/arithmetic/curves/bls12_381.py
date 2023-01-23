@@ -7,8 +7,7 @@
 ##/* 											  */
 ##/* DESCRIPTION: bls12_381 Ethereum curve*/
 ##/* This is a high level simulation for validation purpose				  */
-##/* 
-#/* note that some constant aggregating values could be precomputed			  */
+#https://github.com/zcash/librustzcash/blob/6e0364cd42a2b3d2b958a54771ef51a8db79dd29/pairing/src/bls12_381/README.md
 ##**************************************************************************************/
 from sage.all_cmdline import *   # import sage library
 
