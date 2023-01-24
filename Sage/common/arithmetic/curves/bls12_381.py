@@ -75,8 +75,8 @@ def map_Fp12M_Fp12M_A(x):
         return sum([xi.polynomial()((SM**6-1)) * SM**e for e,xi in enumerate(x.list())])
 
 
-#this is the function you want:  
-def e(P,Q):
+#this is the function you want for your protocol:  
+def _e(P,Q):
   return ate_pairing_bls12_aklgl(Q, P, E2.a6(), u0, Fp12M, map_Fp12M_Fp12M_A, False)
 
 

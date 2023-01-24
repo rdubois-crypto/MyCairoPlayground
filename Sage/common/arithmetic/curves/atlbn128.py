@@ -74,20 +74,16 @@ c = 1
 #G2 cofactor
 c2 = 21888242871839275222246405745257275088844257914179612981679871602714643921549
 
-#  ED = EllipticCurve([Fp2(0), Fp2(btwD)])
-#    Fp12D = Fp2.extension(s**6 - xiD, names=('wD',)); (wD,) = Fp12D._first_ngens(1)
-#    Fq6D = Fp12D
  
 Fq6D = Fp2.extension(s**6 - xiD, names=('wD',)); (wD,) = Fq6D._first_ngens(1)
 
-#  Fp12D_A = Fp.extension((z**6 - i0D)**2 - i1D**2*a, names=('SD',)); (SD,) = Fp12D_A._first_ngens(1)   
 Fp12D = Fp.extension((z**6 - 9)**2 +1, names=('SD',)); (SD,) = Fp12D._first_ngens(1)
 i0D=9;i1D=1;
+#This is the value of e(P1, P2)^-1, used to normalize the pairing to e(P1, P2)=1
+GT_m1= 2022352245184093622585933928071041773908154497810021340769542779900465408465*SD**11 + 13457918839441801149636661064452586584035112924373040454015419057282722438755*SD**10 + 13548013608579537707697657347285314522053961834277294646656001245838374737667*SD**9 + 17825267360895837085451107995225635057867750528379226586267407742446165874144*SD**8 + 18802626282988020539438689440749692350833158231694366850413846278054266195880*SD**7 + 14314201653062210324735390383406751486918810772583160049675454556786452616376*SD**6 + 5139824347891456789875380810425795311589881545492661390714092973976287322213*SD**5 + 2482300653861500184440064741414678556260669908011530731124174562859179789679*SD**4 + 4682174067881898412784357245754362692360019011977070791057333186827241119302*SD**3 + 917254912024461371424638674294859181633141409274761568025215267498983960928*SD**2 + 18997689509578592230393697934932104181940939224220177620977816741887748145398*SD + 5712357954789893154981989579969852488540698669301181194985843921813279942042
 
-E12 = EllipticCurve([Fp12D(0), Fp12D(b)])
 
-
-#test vector for precompile 8 (should return true)
+#test vector for precompile 8 (should return true) from https://github.com/comitylabs/evm.codes/blob/main/docs/precompiled/0x08.mdx#example
 list_G1=[E1([0x2cf44499d5d27bb186308b7af7af02ac5bc9eeb6a3d147c186b21fb1b76e18da,0x2c0f001f52110ccfe69108924926e45f0b0c868df0e7bde1fe16d3242dc715f6 ]),
  	 E1([0x0000000000000000000000000000000000000000000000000000000000000001, 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45])
  ];
@@ -117,6 +113,7 @@ def ate_pairing_bn_aklgl(Q,P,b_t,u0,Fq6,map_Fq6D_Fp12D,D_twist=True):
     # convert m from tower field to absolute field
     m = map_Fq6D_Fp12D(m)
     f = final_exp_bn(m,u0)
+    #f=f*GT_m1;
     return f
 
 
@@ -142,8 +139,11 @@ def Precompile8(listG1, listG2):
  
  return bool
 
-
-  
+def precompute_gtm1():
+ gtm1=  (_e(Gen1, Gen2))**(-1);
+ print("gtm1=", gtm1);
+ return gtm1;
+ 
  
 def local2_test_ate_pairing_bn254_aklgl():
     set_random_seed(0)
@@ -179,11 +179,13 @@ if __name__ == "__main__":
     print("len",len(list_G1));
     
     Precompile8(list_G1, list_G2); 
-   
+    precompute_gtm1();
+    
+    
     print("\ntest pairing")
-    print(" E, E2, Fq6D, xiD, r, c, c2, t-1",E1, E2, Fq6D, xiD, r, c, c2, t-1);
+#    print(" E, E2, Fq6D, xiD, r, c, c2, t-1",E1, E2, Fq6D, xiD, r, c, c2, t-1);
    
-    test_miller_function_ate_aklgl(E1,E2,Fq6D,xiD,r,c,c2,t-1,D_twist=True)
+#    test_miller_function_ate_aklgl(E1,E2,Fq6D,xiD,r,c,c2,t-1,D_twist=True)
   
     local2_test_ate_pairing_bn254_aklgl()
    

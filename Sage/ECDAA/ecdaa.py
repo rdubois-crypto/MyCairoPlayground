@@ -2,7 +2,7 @@
 ##/* Copyright (C) 2022 - Renaud Dubois - This file is part of cairo_musig2 project	 */
 ##/* License: This software is licensed under a dual BSD and GPL v2 license. 	 */
 ##/* See LICENSE file at the root folder of the project.				 */
-##/* FILE: musig2.sage							             	  */
+##/* FILE: ecdaa.py							             	  */
 ##/* 											  */
 ##/* 											  */
 ##/* DESCRIPTION: ECDAA algorithm*/
@@ -11,7 +11,6 @@
 ##https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-ecdaa-algorithm-v2.0-id-20180227.html#ecdaa-join-algorithm           				  */
 ##/* note that some constant aggregating values could be precomputed			  */
 ##**************************************************************************************/
-from sage.crypto.util import bin_to_ascii
 from sage.all_cmdline import *   # import sage library
 
 from sage.rings.integer_ring import ZZ
@@ -24,132 +23,242 @@ from sage.schemes.elliptic_curves.constructor import EllipticCurve
 # proof.arithmetic(False)
 from sage.structure.proof.all import arithmetic
 
+from sage.crypto.util import bin_to_ascii
 
-from hashlib import sha256
+from hashlib import *
 
-bls12_order=0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001;
-bls12_p=0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
-bls12_b=4;
-bls12_a=0;
+#uncomment the curve to be used
+#BLS12_381 : future of Ethereum
+#from common.arithmetic.curves.bls12_381 import *
+#ALTBN128 aka BN254 : current Ethereum precompiled contracts
+from common.arithmetic.curves.atlbn128 import *
 
-bls12_Gx=0x17F1D3A73197D7942695638C4FA9AC0FC3688C4F9774B905A14E3A3F171BAC586C55E83FF97A1AEFFB3AF00ADB22C6BB;
-bls12_Gy= 0x08B3F481E3AAA0F1A09E30ED741D8AE4FCF5E095D5D00AF600DB18CB2C04B3EDD03CC744A2888AE40CAA232946C5E7E1;
 
-def Init_Curve(curve_characteristic,curve_a, curve_b,Gx, Gy, curve_Order):    
-	Fp=GF(curve_characteristic); 				#Initialize Prime field of Point
-	Fq=GF(curve_Order);					#Initialize Prime field of scalars
-	Curve=EllipticCurve(Fp, [curve_a, curve_b]);		#Initialize Elliptic curve
-	curve_Generator=Curve([Gx, Gy]);
-	
-	return [Curve,curve_Generator];
-	
-bls12_curve=	Init_Curve(bls12_p, bls12_a, bls12_b, bls12_Gx, bls12_Gy, bls12_order);
+##################################################################
+################################# 3.1 Object Encodings
+##################################################################
 
-#bitsize of sha256 output
-_SHA256_T1=256
-OK=0
-KO=1
+
+
+#Convert an int to the input of sha function
+#inVal: integer reprensenting the number to convert
+#size: size in bytes of the output 
+def BigNumberToB(inVal, size):
+ bin_a=(bin(inVal)[2:]);
+ bin_a=bin_a.zfill(size*8);
+
+ return bin_to_ascii(bin_a).encode();
+ 
+
+
+#3.1.2 Encoding EcPoint values as byte strings
+def ECPointToB():
+ return();
+ 
+#3.1.3 Encoding EcPoint2 values as byte strings
+def ECPoint2ToB():
+ return();
+ 
+    
+#returns a nonce in ZP (beware that p is the order of the curve, noted r elsewhere)
+def get_ZPnonce():
+ return randint(0,r-1) 
+
+
+##################################################################
+################################# 3.2 Global ECDAA System Parameters
+##################################################################
+# 3.2.1 Groups G1, G2 and GT of sufficiently large prime order
+G1=E1;
+G2=E2;
+# 3.2.2 Two generators P1 and P2 such that G1=<P1> and G2=<P2>
+P1=Gen1;
+P2=Gen2;
+modulus_S1=len(bin(r)[2:]);#bitsize of the curve
+modulus_S8=(modulus_S1//8)+( (modulus_S1%8)!=0); #bytesize of the curve, (left padding to 0)
+Fq=GF(p);
+
+# 3.2.3 A bilinear pairing e:G1xG2->GT, we use "ate pairing" over BLS12_381 or BN254 (see imports)
+# note: implemented as _e(P,Q)
+# 3.2.3 A bilinear pairing e:G1xG2->GT, we use "ate pairing" over BLS12_381 or BN254 (see imports)
+
+
 ##################################################################
 ################################# HASHING
-##################################################################
 #/*https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-13#name-bls12-381-g1 specifies use of SHA256 for H*/
 ##################################################################
-##################################################################
-#Convert an int to the input of sha function
-def int_to_ascii_hash(int_a, length):
- cpt=(bin(i)[2:]).zfill(length);
- return bin_to_ascii(cpt).encode();
+
+#################################
+##Hash on Zp
+# 3.2.4 hash function hash with H:{0,1}* -> Zp, to reduce bias, SHA512 is used for any size
+#################################
+# the core hash function used is defined here
+def H_Zp_init():
+ ctx = sha512(); 
+ return ctx;
+
+
+#update state with an input of given bytesize 
+def H_Zp_update(ctx, input,bytesize):
+ ctx.update(BigNumberToB(input,bytesize ));
+ return ctx;
+
  
-#returns a nonce in [0..Boud-1]
-def get_nonce(Bound):
- return random_int(0,Bound-1) 
+#update state with an element of Zp 
+def H_Zp_update_Zp(ctx, input):
+ ctx.update(BigNumberToB(input,modulus_S8 ));
+ return ctx;
+
+
+#update state with an element of G1
+def H_Zp_update_G1(ctx, input):
+ H_Zp_update_Zp(ctx, input[0] );
+ H_Zp_update_Zp(ctx, input[1] );
+ 
+ return ctx;
+	
+#update state with an element of G2
+def H_Zp_update_G2(ctx, input):
+ H_Zp_update_Zp(ctx, input[0].polynomial().list()[1] );
+ H_Zp_update_Zp(ctx, input[0].polynomial().list()[0] );
+ H_Zp_update_Zp(ctx, input[1].polynomial().list()[1] );
+ H_Zp_update_Zp(ctx, input[1].polynomial().list()[0] );
+ 
+ return ctx;
+   
+def H_Zp_final(ctx):
+  return int('0x'+ctx.hexdigest(),16)%r;
+ 
+def H_Zp(int_a):
+ ctx=H_Zp_init();
+ ctx=H_Zp_update_Zp(ctx, int_a);
+ return H_Zp_final(ctx)
+
 
 #################################
 #Hash_onG1
 #################################
 #Hash on curve
-def Hash_onG1(String_m, q, b):
- Fq=GF(q);
+def Hash_onG1(m):
  flag=false;
-
+ i=0;
+  
  while (flag==false):
-  i=0;
-  cpt=(bin(i)[2:]).zfill(32);
-  input=bin_to_ascii(cpt);  
-  sha = hashlib.sha256()
-  sha.update(input.encode())
-  x=int('0x'+sha.hexdigest())
-  z=Fq(x)^3+Fq(b);
+  #H((i,4)|m)
+  x=H_Zp(i+(m*2^32));
+  z=Fq(x)**3+Fq(b);
   if(is_square(z)==true):
     flag=true
   else:
     i=i+1
-    if(i==252):
+    if(i==232):
       return false
  y=int(sqrt(z))
- minus_y=q-y
+ minus_y=r-y
  Gy=min(y, minus_y)
 
- return [x, Gy]
+ return E1([x, Gy])
+ 
 
 #################################
 #Hash_pre
 #################################
-def HG1_pre(String_m, q, b):
+def HG1_pre(m):
 
- Fq=GF(q);
  flag=false;
-
+ i=0;
+  
  while (flag==false):
-  i=0;
-  cpt=(bin(i)[2:]).zfill(32);
-  input=bin_to_ascii(cpt);  
-  sha = hashlib.sha256()
-  sha.update(input.encode())
-  x=int('0x'+sha.hexdigest())
-  z=Fq(x)^3+Fq(b);
+  #H((i,4)|m)
+  sc=i+(m*2^32)
+  x=H_Zp(sc);
+  z=Fq(x)**3+Fq(b);
   if(is_square(z)==true):
     flag=true
   else:
     i=i+1
-    if(i==252):
+    if(i==232):
       return false
  y=int(sqrt(z))
- minus_y=q-y
- sc= bin_to_ascii(cpt)+String_m
- yc=min(y, minus_y)
+ minus_y=r-y
+ Gy=min(y, minus_y)
 
- return [sc, yc]
-
+ return sc, Gy
+ 
 #################################
 #Deriv B
 #################################
 def Deriv_B(sc,yc):
-
- sha = hashlib.sha256()
- sha.update(sc.encode())
- x=int('0x'+sha.hexdigest())
-## the following steps may be skip for low performances sdevices
- z=Fq(x)^3+Fq(b);
+ x=H_Zp(sc);
+ z=Fq(x)**3+Fq(b);
  if(is_square(z)==false):
-  return (0,0) ## error, the value is not square
+  return E1([0,1,0]) ## error, the value is not square
  y=int(sqrt(z))
- minus_y=q-y
+ minus_y=r-y
  if(yc!=y):
-  return [0,0] ## error, the value is not expected value
- B=curve([x,yc]);
+  return [0,1,0] ## error, the value is not expected value
+ B=E1([x,yc]);
  return B
 
 ##################################################################
 ################################# SETUP
 ##################################################################
+#3.3 Issuer Specific parameters
 #Description: this function generates the secret and public parameters
 # of the Issuer. All privacy security depends on the sk generated.
+#isk_x, isk_y, r_x, r_y, Ux, Uy, c,
 
-def SetUp(Curve,q, sk_x, sk_y):
-#1. Randomly generated ECDAA Issuer private key isk=(x,y) with 
+#Generate Issuer secret parameter
+def SetUp_Priv():
+#1,2. Randomly generated ECDAA Issuer private key isk=(x,y) with 
 #[x,y=RAND(p)]
- return()
+ isk_x=get_ZPnonce();
+ isk_y=get_ZPnonce();
+#[rx=RAND(p)]
+ r_x=get_ZPnonce();
+#[ry=RAND(p)]
+ r_y=get_ZPnonce();
+ return isk_x,isk_y, r_x, r_y;
+
+#Derivate Issuer public parameters
+def SetUp_DerivPub(isk_x, isk_y, r_x, r_y):
+#Issuer public Key
+ X=isk_x*P2;
+ Y=isk_y*P2;
+#3. Ux=rx.P2 
+ U_x=r_x*P2;
+#4. Uy=rx.P2 
+ U_y=r_y*P2;
+ ctx_c=H_Zp_init();
+#5. c=H(Ux|Uy|P2|X|Y)
+ ctx_c=H_Zp_update_G2(ctx_c, U_x);#Ux
+ ctx_c=H_Zp_update_G2(ctx_c, U_y);#Uy
+ ctx_c=H_Zp_update_G2(ctx_c, P2);#P2 
+ ctx_c=H_Zp_update_G2(ctx_c, X);#X
+ ctx_c=H_Zp_update_G2(ctx_c, Y);#Y
+ i_c=H_Zp_final(ctx_c);
+#6. sx=r_x+c.x mod p
+ s_x=(r_x+i_c*isk_x)%r 
+#7. sy=r_y+c.y mod p
+ s_y=(r_y+i_c*isk_y)%r 
+    
+ return(X,Y,i_c,s_x, s_y)
+
+#H(sx.P2+c*X|syP2-cY|P2|X|Y)== c ?
+def CheckSetup(X,Y,i_c,s_x, s_y):
+ ctx_c=H_Zp_init();
+ chunk1=s_x*P2-i_c*X;#sx.P2+c*X
+ 
+ ctx_c=H_Zp_update_G2(ctx_c, chunk1)
+ chunk2=s_y*P2-i_c*Y;#sy.P2-c*Y
+ ctx_c=H_Zp_update_G2(ctx_c, chunk2)
+ ctx_c=H_Zp_update_G2(ctx_c, P2);#P2 
+ ctx_c=H_Zp_update_G2(ctx_c, X);#X
+ ctx_c=H_Zp_update_G2(ctx_c, Y);#Y
+ i_c2=H_Zp_final(ctx_c);
+
+ return(i_c==i_c2);
+
 
 
 ##################################################################
@@ -162,101 +271,78 @@ def SetUp(Curve,q, sk_x, sk_y):
 # Step 13+: ASM/Authenticator checks validity of received credentials
 
 
-
-
-def Issuer_Join_Generate_B(Curve, q):
+def Issuer_Join_Generate_B():
 #2.The ECDAA Issuer chooses a nonce BigInteger m=RAND(p)
- nonce=get_nonce(q);
+ m=get_ZPnonce();
 #3.The ECDAA Issuer computes the B value of the credential as B
- sc, yc = HG1_pre(nonce, q, b);
- B=Curve[0]([sc, yc]);
+ sc, yc = HG1_pre(m);
+ return sc, yc;
 
 
-
-
-
-def Authenticator_Join_GenPriv( Curve, q, sc,yc):
- sk=get_nonce(q);
+def Authenticator_Join_GenPriv( sc, yc):
+ m=sc//2^32;
+#4. Authenticator chooses and stores ECDAA private key sk=Rand(p) 
+ sk=get_ZPnonce();
 #5.The authenticator re-computes B = (H(sc),yc)
  B=Deriv_B(sc,yc);
 #6. The authenticator computes its public key ECPoint Q=B.sk
  Q=sk*B;
 #7.The authenticator proves knowledge of sk as follows
 #7.1.BigInteger r1​​ =RAND(p)
- r1=get_nonce(q);
+ r1=get_ZPnonce();
 #7.2 U1=B.r1
  U1=B*r1;
 #7.3.​​BigInteger c​2​​ =H(U​1​​ ∣P​​​ ∣Q∣m)
- sha = hashlib.sha256()
- U1_x=int_to_ascii_hash(U1[0], 384);
- sha.update(U1_x);
- U1_y=int_to_ascii_hash(U1[0], 384);
- sha.update(U1_y);
- P1_x=int_to_ascii_hash(Curve[1][0], 384);
- sha.update(p1_X);
- P1_Y=int_to_ascii_hash(Curve[1][1], 384);
- sha.update(P1_y);
- Q_x=int_to_ascii_hash(Q[0], 384);
- sha.update(Q_x);
- Q_y=int_to_ascii_hash(Q[1], 384);
- sha.update(Q_y);
- sha.update(m);
- c2=int('0x'+sha.hexdigest())
+ ctx=H_Zp_init();
+ 
+ H_Zp_update_G1(ctx, U1);
+ H_Zp_update_G1(ctx, P1);
+ H_Zp_update_G1(ctx, Q);
+ H_Zp_update_Zp(ctx, m);
+ i_c2=H_Zp_final(ctx);
  #7.4.BigInteger n=RAND(p)
- n=get_nonce(q);
-#7.5. BigInteger ​​ =H(n∣c​2​​ )
- sha = hashlib.sha256()
-
- nn=int_to_ascii_hash(n, 384);
- cc2=int_to_ascii_hash(c2, _SHA256_T1);
- sha.update(cc2);
- c1=int('0x'+sha.hexdigest())
+ n=get_ZPnonce();
+#7.5. BigInteger ​​ c1=H(n∣c​2​​ )
+ ctx=H_Zp_init();
+ H_Zp_update_Zp(ctx, n);
+ H_Zp_update_Zp(ctx, i_c2);
+ i_c1=H_Zp_final(ctx);
 #7.6. BigInteger s​1​​ =r​1​​ +c​1​​ ⋅sk
- s1=r1+c1*sk;
+ s1=r1+i_c1*sk;
 #8 Authenticator sends Q, c1,s1,n to Issuer
- return[sk,Q, c1, s1, n]; 
+ return sk,Q, i_c1, s1, n; 
 
+#10. issuer verifies that Q in G1 and H(n|H(s1B-c1Q|P1|Q|m): check proof of possesion of private key 
+def Check_Proof(Q, B, m, c1, s1, n):
+ U1=s1*B-c1*Q;
+ 
+ ctx=H_Zp_init();
+ H_Zp_update_G1(ctx, U1);
+ H_Zp_update_G1(ctx, P1);
+ H_Zp_update_G1(ctx, Q);
+ H_Zp_update_Zp(ctx, m);
+ i_c2=H_Zp_final(ctx);
+ 
+ ctx=H_Zp_init();
+ H_Zp_update_Zp(ctx, n);
+ H_Zp_update_Zp(ctx, i_c2);
+ i_c1=H_Zp_final(ctx);
+ 
+ return (i_c1==c1)
 
 #input (sk_x, sk_y): issuer secret key
-def Issuer_Gen_Credentials(sk_y, m, B, Q, c1, s1, n):
- sha = hashlib.sha256()
- U1=s1*B+c1*Q; ##=U1 = B​s​1​​​ ⋅Q​−c​1​​
- sha = hashlib.sha256()
- U1_x=int_to_ascii_hash(U1[0], 384);
- sha.update(U1_x);
- U1_y=int_to_ascii_hash(U1[0], 384);
- sha.update(U1_y);
- P1_Y=int_to_ascii_hash(Curve[1][1], 384);
- sha.update(P1_y);
- Q_x=int_to_ascii_hash(Q[0], 384);
- sha.update(Q_x);
- Q_y=int_to_ascii_hash(Q[1], 384);
- sha.update(Q_y);
- sha.update(m);
- c2=int('0x'+sha.hexdigest()) 
-
- nn=int_to_ascii_hash(n, 384);
- cc2=int_to_ascii_hash(c2, _SHA256_T1);
- c1_computed=int('0x'+sha.hexdigest())
- if(c1_computed!=c1):
-  return [KO,0,0,0,0];
+def Issuer_Gen_Credentials(sk_x, sk_y, m, B, Q, c1, s1, n):
 #7.11 The ECDAA Issuer creates credential (A,B,C,D) as follows
 #7.11.1 A=B^(1/y)
- A=(Fq(sk_y)^-1)*B;
+ A=int(Fq(sk_y)**(-1))*B;
 #7.11.2 B, la réponse B B=B
 #7.11.3 C=(A*Q)^x;
  C=sk_x*(A+Q);
- return [A,C];
-
-#
-def Authenticator_CheckCredentials():
- return [OK];
-
-
-##################################################################
-################################# SIGN
-##################################################################
-
-
-
-
+ return A,B,C,Q;
+ 
+def Check_Credentials(A,B,C,D, X, Y):
+ flag=(_e(A,Y)==_e(B,P2));
+ flag=flag and ( _e(C,P2)==_e(A+D, X));
+ return flag;
+ 
+ 
