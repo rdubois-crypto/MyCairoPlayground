@@ -400,9 +400,6 @@ def ECDAA_Sign(sk, A, B, C, D, Data, Data_s8, h_KRD, h_s8):
  rr=get_ZPnonce();
  #8. Ecpoint U=S^r
  U=rr*S;
- 
- 
- 
 
  #9. BigInteger c2=H(U|S|W|AdditionalData|h_KRD) 
  ctx=H_Zp_init();
