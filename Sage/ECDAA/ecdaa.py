@@ -137,7 +137,11 @@ def H_Zp(int_a):
  ctx=H_Zp_update_Zp(ctx, int_a);
  return H_Zp_final(ctx)
 
-
+def H_Zp_long(int_a, size_S8):
+  ctx=H_Zp_init();
+  ctx=H_Zp_update(ctx, int_a, size_S8);	
+  return int('0x'+ctx.hexdigest());
+  
 #################################
 #Hash_onG1
 #################################
@@ -373,14 +377,15 @@ def ECDAA_Sign(sk, A, B, C, D, Data, Data_s8, h_KRD, h_s8):
  rr=get_ZPnonce();
  #8. Ecpoint U=S^r
  U=rr*S;
+ 
  #9. BigInteger c2=H(U|S|W|AdditionalData|h_KRD) 
-  ctx=H_Zp_init();
-  H_Zp_update_G1(ctx, U);
-  H_Zp_update_G1(ctx, S);
-  H_Zp_update_G1(ctx, W);
-  H_Zp_update(ctx, Data, Data_s8);
-  H_Zp_update(ctx, h_KRD, h_s8);
-  i_c2=H_Zp_final(ctx);
+ ctx=H_Zp_init();
+ H_Zp_update_G1(ctx, U);
+ H_Zp_update_G1(ctx, S);
+ H_Zp_update_G1(ctx, W);
+ H_Zp_update(ctx, Data, Data_s8);
+ H_Zp_update(ctx, h_KRD, h_s8);
+ i_c2=H_Zp_final(ctx);
  
  #10 BigInteger n=rand(p)
  n= get_ZPnonce();
@@ -392,7 +397,7 @@ def ECDAA_Sign(sk, A, B, C, D, Data, Data_s8, h_KRD, h_s8):
  #12 BigInteger s=r+c.sk mod order
  s=(rr+i_c*sk)%r;
  
- return c,s,R,S,T,W,n
+ return i_c,s,R,S,T,W,n
 
 
 ##################################################################
@@ -409,16 +414,17 @@ def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
   return false #Check S is not infinity point (1_G1)
  
  #3. H(n|H(S^s.W^-c|S|W|Data|H(KRD))) == c ? fail if not equal
- U=s*S-c*W;
+ U=s*S-i_c*W;
+ 
  #from here same as signing process hashing from U, S, W, Data, HKRD
  #9. BigInteger c2=H(U|S|W|AdditionalData|h_KRD) 
-  ctx=H_Zp_init();
-  H_Zp_update_G1(ctx, U);
-  H_Zp_update_G1(ctx, S);
-  H_Zp_update_G1(ctx, W);
-  H_Zp_update(ctx, Data, Data_s8);
-  H_Zp_update(ctx, h_KRD, h_s8);
-  i_c2=H_Zp_final(ctx);
+ ctx=H_Zp_init();
+ H_Zp_update_G1(ctx, U);
+ H_Zp_update_G1(ctx, S);
+ H_Zp_update_G1(ctx, W);
+ H_Zp_update(ctx, Data, Data_s8);
+ H_Zp_update(ctx, h_KRD, h_s8);
+ i_c2=H_Zp_final(ctx);
  
  #11 c=H(n|c2)
  ctx=H_Zp_init();
@@ -426,6 +432,7 @@ def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
  H_Zp_update_Zp(ctx, i_c2);
  i_cprime=H_Zp_final(ctx);
  
+ flag=true;
  if(i_cprime!=i_c):
   flag=false;
  
@@ -435,10 +442,10 @@ def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
  
  #5 e(T,P2)==e(R.W, X) ? fail if not equal  
  if(_e(T,P2)!=_e(R+W,X)):
+   flag=false;
  #6 for all rogues, if W=S^sk, fail
  # It is assumed that rogue checking is done prior to the call
  
- flag=true;
  return flag;
 
 # Revocation check
@@ -447,10 +454,10 @@ def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
 #Input: 
 # Rogs: Rogue list of compromised sk
 # W,S : W and S parts of signature
-def ECDAA_KillRogue(W,S Rogs):
+def ECDAA_KillRogue(W,S, Rogs):
  #6 for all rogues, if W=S^sk, fail
  for i in Rogs:
-   if(W==Rogs[i]*S)
+   if(W==Rogs[i]*S):
      return false;
    
    return true;

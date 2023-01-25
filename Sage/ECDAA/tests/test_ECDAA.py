@@ -71,6 +71,25 @@ def test_CheckCredentials():
  
   return res;
 
+#Check consistency of signing/verifying process
+def test_SigVerif():
+  isk_x,isk_y, r_x, r_y=SetUp_Priv();
+  X,Y,i_c,s_x, s_y = SetUp_DerivPub(isk_x,isk_y, r_x, r_y);
+  sc, yc=Issuer_Join_Generate_B();
+  m=sc//2^32;
+  B=Deriv_B(sc,yc);
+  sk,Q, i_c1, s1, n= Authenticator_Join_GenPriv(sc,yc);
+  A,B,C,D = Issuer_Gen_Credentials(isk_x, isk_y, m, B, Q, i_c1, s1, n)
+  Data=0x616263;
+  
+  h_KRD=get_ZPnonce()%(2^256);
+  
+  i_c,s,R,S,T,W,n=ECDAA_Sign(sk, A, B, C, D, Data, 3, h_KRD, 32);
+  res=true;
+  res=ECDAA_Verify(X,Y, Data, 3, h_KRD, 32,  i_c,s,R,S,T,W,n)
+
+  return res;
+
 if __name__ == "__main__":
     arithmetic(False)
     
@@ -81,6 +100,7 @@ if __name__ == "__main__":
     print("---- Test Join:");        
     print("test_Proof_of_possesion:",test_Proof_of_possesion());
     print("test_CheckCredentials:",test_CheckCredentials());
+    print("test_SigVerif:",test_SigVerif());
 
 
 
