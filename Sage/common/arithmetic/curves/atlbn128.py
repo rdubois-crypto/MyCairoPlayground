@@ -123,6 +123,11 @@ def _e(P,Q):
    
  return f
 
+def long_pairing(P,Q):
+ f= ate_pairing_bn_aklgl(Q, P, E2.a6(), u0, Fq6D, map_Fq6D_Fp12D, True)   
+ return f
+
+
 #the solidity precompile number 8: test if prod(e(G1_i, G2_i)==1) ?
 def Precompile8(listG1, listG2):
  bool=false;

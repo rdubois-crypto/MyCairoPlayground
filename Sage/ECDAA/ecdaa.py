@@ -31,7 +31,9 @@ from hashlib import *
 #BLS12_381 : future of Ethereum
 #from common.arithmetic.curves.bls12_381 import *
 #ALTBN128 aka BN254 : current Ethereum precompiled contracts
+from common.arithmetic.curves.atlbn128 import long_pairing as _e
 from common.arithmetic.curves.atlbn128 import *
+
 
 
 ##################################################################
@@ -77,6 +79,7 @@ P2=Gen2;
 modulus_S1=len(bin(r)[2:]);#bitsize of the curve
 modulus_S8=(modulus_S1//8)+( (modulus_S1%8)!=0); #bytesize of the curve, (left padding to 0)
 Fq=GF(p);
+Fp=GF(r); #yes i hate those notations
 
 # 3.2.3 A bilinear pairing e:G1xG2->GT, we use "ate pairing" over BLS12_381 or BN254 (see imports)
 # note: implemented as _e(P,Q)
@@ -262,7 +265,7 @@ def CheckSetup(X,Y,i_c,s_x, s_y):
 
 
 ##################################################################
-################################# JOIN
+################################# 3.4 JOIN
 ##################################################################
 # The join algorithm is split in 4 steps:
 # Step 2-3: Issuer generates credential B
@@ -332,17 +335,141 @@ def Check_Proof(Q, B, m, c1, s1, n):
 
 #input (sk_x, sk_y): issuer secret key
 def Issuer_Gen_Credentials(sk_x, sk_y, m, B, Q, c1, s1, n):
-#7.11 The ECDAA Issuer creates credential (A,B,C,D) as follows
-#7.11.1 A=B^(1/y)
- A=int(Fq(sk_y)**(-1))*B;
-#7.11.2 B, la réponse B B=B
-#7.11.3 C=(A*Q)^x;
+#11 The ECDAA Issuer creates credential (A,B,C,D) as follows
+#11.1 A=B^(1/y)
+ A=int(Fp(sk_y)**(-1))*B;
+#11.2 B, la réponse B B=B
+#11.3 C=(A*Q)^x;
  C=sk_x*(A+Q);
  return A,B,C,Q;
- 
+
+# 12, 13, 14, Authenticator checks parameters validity
 def Check_Credentials(A,B,C,D, X, Y):
- flag=(_e(A,Y)==_e(B,P2));
- flag=flag and ( _e(C,P2)==_e(A+D, X));
+ flag=(_e(A,Y)==_e(B,P2)); #checks that e(A,Y)==e(B,P2) ?
+ flag=flag and ( _e(C,P2)==_e(A+D, X));# checks that e(C,P2)==e(A+D, X) ?
  return flag;
+ 
+
+##################################################################
+################################# 3.5 SIGN
+################################################################## 
+#Input: 
+#sk=user secret key
+#A,B,C,D: credentials
+#Data: some additional data of bytesize Data_s8
+#h_KRD : hash of KRD (message) of bytesize Data_s8
+def ECDAA_Sign(sk, A, B, C, D, Data, Data_s8, h_KRD, h_s8):
+ #2. BigNumber l=rand(p)
+ l=get_ZPnonce();
+ #3. ECPoint R=A^l
+ R=l*A;
+ #4. EcPoint S=B^l
+ S=l*B;
+ #5. EcPoint T=C^l
+ T=l*C;
+ #6. EcPoint W=D^l
+ W=l*D;
+ #7. Big integer r = rand(p)
+ rr=get_ZPnonce();
+ #8. Ecpoint U=S^r
+ U=rr*S;
+ #9. BigInteger c2=H(U|S|W|AdditionalData|h_KRD) 
+  ctx=H_Zp_init();
+  H_Zp_update_G1(ctx, U);
+  H_Zp_update_G1(ctx, S);
+  H_Zp_update_G1(ctx, W);
+  H_Zp_update(ctx, Data, Data_s8);
+  H_Zp_update(ctx, h_KRD, h_s8);
+  i_c2=H_Zp_final(ctx);
+ 
+ #10 BigInteger n=rand(p)
+ n= get_ZPnonce();
+ #11 c=H(n|c2)
+ ctx=H_Zp_init();
+ H_Zp_update_Zp(ctx, n);
+ H_Zp_update_Zp(ctx, i_c2);
+ i_c=H_Zp_final(ctx);
+ #12 BigInteger s=r+c.sk mod order
+ s=(rr+i_c*sk)%r;
+ 
+ return c,s,R,S,T,W,n
+
+
+##################################################################
+################################# 3.6 Verify
+################################################################## 
+#Input:
+#X,Y: signer public key
+# Data, Data_s8, h_KRD, h_s8: additional data and message
+#c,s,R,S,T,W,n : signature
+def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
+ if R==E1([0,1,0]): 
+  return false #Check R is not infinity point (1_G1)
+ if S==E1([0,1,0]): 
+  return false #Check S is not infinity point (1_G1)
+ 
+ #3. H(n|H(S^s.W^-c|S|W|Data|H(KRD))) == c ? fail if not equal
+ U=s*S-c*W;
+ #from here same as signing process hashing from U, S, W, Data, HKRD
+ #9. BigInteger c2=H(U|S|W|AdditionalData|h_KRD) 
+  ctx=H_Zp_init();
+  H_Zp_update_G1(ctx, U);
+  H_Zp_update_G1(ctx, S);
+  H_Zp_update_G1(ctx, W);
+  H_Zp_update(ctx, Data, Data_s8);
+  H_Zp_update(ctx, h_KRD, h_s8);
+  i_c2=H_Zp_final(ctx);
+ 
+ #11 c=H(n|c2)
+ ctx=H_Zp_init();
+ H_Zp_update_Zp(ctx, n);
+ H_Zp_update_Zp(ctx, i_c2);
+ i_cprime=H_Zp_final(ctx);
+ 
+ if(i_cprime!=i_c):
+  flag=false;
+ 
+ #4 e(R,Y)!=e(S,P2), fail if not equal
+ if(_e(R,Y)!=_e(S,P2)):
+   flag=false;
+ 
+ #5 e(T,P2)==e(R.W, X) ? fail if not equal  
+ if(_e(T,P2)!=_e(R+W,X)):
+ #6 for all rogues, if W=S^sk, fail
+ # It is assumed that rogue checking is done prior to the call
+ 
+ flag=true;
+ return flag;
+
+# Revocation check
+#Description: This function parse a list of compromised key to reject
+#signatures issued by revoked users
+#Input: 
+# Rogs: Rogue list of compromised sk
+# W,S : W and S parts of signature
+def ECDAA_KillRogue(W,S Rogs):
+ #6 for all rogues, if W=S^sk, fail
+ for i in Rogs:
+   if(W==Rogs[i]*S)
+     return false;
+   
+   return true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
  
  
