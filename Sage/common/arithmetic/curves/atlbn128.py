@@ -25,6 +25,9 @@ from external.Pairings.pairing_bn import final_exp_hard_bn
 from external.Pairings.pairing import *
 from external.Pairings.tests.test_pairing import *
 
+
+curve_name="BN254 (Ethereum EIP 197)"
+
 #
 u0=0x44e992b44a6909f1
 t=6*(u0**2)+1
@@ -123,6 +126,7 @@ def _e(P,Q):
    
  return f
 
+#a long name cause the import fail for mysterious reason with short one
 def long_pairing(P,Q):
  f= ate_pairing_bn_aklgl(Q, P, E2.a6(), u0, Fq6D, map_Fq6D_Fp12D, True)   
  return f

@@ -24,22 +24,26 @@ from sage.structure.proof.all import arithmetic
 from sage.crypto.util import bin_to_ascii
 from hashlib import *
 
-#uncomment the curve to be used
-#BLS12_381 : future of Ethereum
-#from common.arithmetic.curves.bls12_381 import *
-#ALTBN128 aka BN254 : current Ethereum precompiled contracts
-from common.arithmetic.curves.atlbn128 import *
 from ECDAA.ecdaa import *
 
  
 #vector extracted from https://www.di-mgt.com.au/sha_testvectors.html
 def test_sha512():
-    ctx=H_Zp_init();
+    ctx= sha512(); 
     ctx=H_Zp_update(ctx, 0x616263, 3);	
     if(ctx.hexdigest()=='ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f'):
       return true;
     else:
       return false;
+      
+def test_sha256():   
+ ctx= sha256(); 
+ ctx=H_Zp_update(ctx, 0x616263, 3);	
+ if(ctx.hexdigest()=='ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'):
+      return true;
+ else:
+      return false;
+
       
 #mathematical validity checking (formulae consistency)
 def test_CheckSetup():
@@ -53,6 +57,7 @@ def test_Proof_of_possesion():
   X,Y,i_c,s_x, s_y = SetUp_DerivPub(isk_x,isk_y, r_x, r_y);
   sc, yc=Issuer_Join_Generate_B();
   m=sc//2^32;
+  
   B=Deriv_B(sc,yc);
   _,Q, i_c1, s1, n= Authenticator_Join_GenPriv(sc,yc);
   res=Check_Proof(Q, B, m, i_c1, s1, n);
@@ -92,9 +97,13 @@ def test_SigVerif():
 
 if __name__ == "__main__":
     arithmetic(False)
+   
+    print("\n\n######## Test ECDAA with curve:", curve_name);
     
     print("---- Test Encodings:");
+    print("test_sha256:",test_sha512());
     print("test_sha512:",test_sha512());
+    
     print("---- Test SetUp:");        
     print("test_CheckSetUp:",test_CheckSetup());
     print("---- Test Join:");        

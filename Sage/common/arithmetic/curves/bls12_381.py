@@ -25,6 +25,7 @@ from external.Pairings.pairing import *
 ############## Precomputed constants for BLS12_381
 
 
+curve_name="BLS12_381 (Ethereum EIP 2537)"
 
 #preparse("QQx.<x> = QQ[]")
 QQx = QQ['x']; (x,) = QQx._first_ngens(1)
@@ -77,6 +78,9 @@ def map_Fp12M_Fp12M_A(x):
 
 #this is the function you want for your protocol:  
 def _e(P,Q):
+  return ate_pairing_bls12_aklgl(Q, P, E2.a6(), u0, Fp12M, map_Fp12M_Fp12M_A, False)
+
+def long_pairing(P,Q):
   return ate_pairing_bls12_aklgl(Q, P, E2.a6(), u0, Fp12M, map_Fp12M_Fp12M_A, False)
 
 

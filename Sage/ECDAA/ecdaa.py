@@ -9,6 +9,7 @@
 ##/* This is a high level simulation for validation purpose				  */
 ##/* 
 ##https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-ecdaa-algorithm-v2.0-id-20180227.html#ecdaa-join-algorithm           				  */
+## The only difference lies in the use of cofactor cleaning for non BN curves
 ##/* note that some constant aggregating values could be precomputed			  */
 ##**************************************************************************************/
 from sage.all_cmdline import *   # import sage library
@@ -28,11 +29,14 @@ from sage.crypto.util import bin_to_ascii
 from hashlib import *
 
 #uncomment the curve to be used
-#BLS12_381 : future of Ethereum
-#from common.arithmetic.curves.bls12_381 import *
+#BLS12_381 : future of Ethereum precompiled contracts
+
+from common.arithmetic.curves.bls12_381 import long_pairing as _e #dunnow why short name fail
+from common.arithmetic.curves.bls12_381 import *
+
 #ALTBN128 aka BN254 : current Ethereum precompiled contracts
-from common.arithmetic.curves.atlbn128 import long_pairing as _e
-from common.arithmetic.curves.atlbn128 import *
+#from common.arithmetic.curves.atlbn128 import long_pairing as _e
+#from common.arithmetic.curves.atlbn128 import *
 
 
 
@@ -51,7 +55,7 @@ def BigNumberToB(inVal, size):
 
  return bin_to_ascii(bin_a).encode();
  
-
+ 
 
 #3.1.2 Encoding EcPoint values as byte strings
 def ECPointToB():
@@ -76,8 +80,13 @@ G2=E2;
 # 3.2.2 Two generators P1 and P2 such that G1=<P1> and G2=<P2>
 P1=Gen1;
 P2=Gen2;
-modulus_S1=len(bin(r)[2:]);#bitsize of the curve
-modulus_S8=(modulus_S1//8)+( (modulus_S1%8)!=0); #bytesize of the curve, (left padding to 0)
+order_S1=len(bin(r)[2:]);#bitsize of the curve order
+order_S8=(order_S1//8)+( (order_S1%8)!=0); #bytesize of curve order, (left padding to 0)
+modulus_S1=len(bin(p)[2:]);
+modulus_S8=(modulus_S1//8)+( (modulus_S1%8)!=0);
+
+
+
 Fq=GF(p);
 Fp=GF(r); #yes i hate those notations
 
@@ -93,11 +102,11 @@ Fp=GF(r); #yes i hate those notations
 
 #################################
 ##Hash on Zp
-# 3.2.4 hash function hash with H:{0,1}* -> Zp, to reduce bias, SHA512 is used for any size
+# 3.2.4 hash function hash with H:{0,1}* -> Zp, to reduce bias, SHA512 is recommended, thus EVM compatibility requires sha256
 #################################
 # the core hash function used is defined here
 def H_Zp_init():
- ctx = sha512(); 
+ ctx = sha256(); 
  return ctx;
 
 
@@ -107,28 +116,34 @@ def H_Zp_update(ctx, input,bytesize):
  return ctx;
 
  
-#update state with an element of Zp 
+#update state with an element of Zp (order)
 def H_Zp_update_Zp(ctx, input):
+ ctx.update(BigNumberToB(input,order_S8 ));
+ return ctx;
+
+
+#update state with an element of Fq (characteristic)
+def H_Zp_update_Fq(ctx, input):
  ctx.update(BigNumberToB(input,modulus_S8 ));
  return ctx;
 
 
 #update state with an element of G1
 def H_Zp_update_G1(ctx, input):
- H_Zp_update_Zp(ctx, input[0] );
- H_Zp_update_Zp(ctx, input[1] );
+ H_Zp_update_Fq(ctx, input[0] );
+ H_Zp_update_Fq(ctx, input[1] );
  
  return ctx;
 	
 #update state with an element of G2
 def H_Zp_update_G2(ctx, input):
- H_Zp_update_Zp(ctx, input[0].polynomial().list()[1] );
- H_Zp_update_Zp(ctx, input[0].polynomial().list()[0] );
- H_Zp_update_Zp(ctx, input[1].polynomial().list()[1] );
- H_Zp_update_Zp(ctx, input[1].polynomial().list()[0] );
+ H_Zp_update_Fq(ctx, input[0].polynomial().list()[1] );
+ H_Zp_update_Fq(ctx, input[0].polynomial().list()[0] );
+ H_Zp_update_Fq(ctx, input[1].polynomial().list()[1] );
+ H_Zp_update_Fq(ctx, input[1].polynomial().list()[0] );
  
  return ctx;
-   
+
 def H_Zp_final(ctx):
   return int('0x'+ctx.hexdigest(),16)%r;
  
@@ -140,7 +155,7 @@ def H_Zp(int_a):
 def H_Zp_long(int_a, size_S8):
   ctx=H_Zp_init();
   ctx=H_Zp_update(ctx, int_a, size_S8);	
-  return int('0x'+ctx.hexdigest());
+  return int('0x'+ctx.hexdigest(),16)%r;
   
 #################################
 #Hash_onG1
@@ -161,10 +176,11 @@ def Hash_onG1(m):
     if(i==232):
       return false
  y=int(sqrt(z))
- minus_y=r-y
+ minus_y=p-y
  Gy=min(y, minus_y)
-
- return E1([x, Gy])
+ Pcleaned=c*E1([x, Gy]);
+ 
+ return Pcleaned
  
 
 #################################
@@ -187,24 +203,30 @@ def HG1_pre(m):
     if(i==232):
       return false
  y=int(sqrt(z))
- minus_y=r-y
+ minus_y=p-y
  Gy=min(y, minus_y)
-
- return sc, Gy
+ Pcleaned=c*E1([x, Gy]); #for BLS curves, cofactor cleaning is required
+  
+ return sc, int(Pcleaned[1])
  
 #################################
 #Deriv B
 #################################
 def Deriv_B(sc,yc):
+ m=sc//2^32;
  x=H_Zp(sc);
  z=Fq(x)**3+Fq(b);
  if(is_square(z)==false):
   return E1([0,1,0]) ## error, the value is not square
  y=int(sqrt(z))
- minus_y=r-y
- if(yc!=y):
+ minus_y=p-y;
+ Gy=min(y, minus_y)
+
+ Pcleaned=c*E1([x, Gy]);
+ if(yc!=Pcleaned[1]):
   return [0,1,0] ## error, the value is not expected value
- B=E1([x,yc]);
+ B=Pcleaned;
+ 
  return B
 
 ##################################################################
@@ -293,6 +315,7 @@ def Authenticator_Join_GenPriv( sc, yc):
 #5.The authenticator re-computes B = (H(sc),yc)
  B=Deriv_B(sc,yc);
 #6. The authenticator computes its public key ECPoint Q=B.sk
+ 
  Q=sk*B;
 #7.The authenticator proves knowledge of sk as follows
 #7.1.BigInteger r1​​ =RAND(p)
@@ -378,6 +401,9 @@ def ECDAA_Sign(sk, A, B, C, D, Data, Data_s8, h_KRD, h_s8):
  #8. Ecpoint U=S^r
  U=rr*S;
  
+ 
+ 
+
  #9. BigInteger c2=H(U|S|W|AdditionalData|h_KRD) 
  ctx=H_Zp_init();
  H_Zp_update_G1(ctx, U);
@@ -404,7 +430,7 @@ def ECDAA_Sign(sk, A, B, C, D, Data, Data_s8, h_KRD, h_s8):
 ################################# 3.6 Verify
 ################################################################## 
 #Input:
-#X,Y: signer public key
+#X,Y: issuer public key
 # Data, Data_s8, h_KRD, h_s8: additional data and message
 #c,s,R,S,T,W,n : signature
 def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
@@ -415,7 +441,8 @@ def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
  
  #3. H(n|H(S^s.W^-c|S|W|Data|H(KRD))) == c ? fail if not equal
  U=s*S-i_c*W;
- 
+ U2=s*S+(r-i_c)*W;
+
  #from here same as signing process hashing from U, S, W, Data, HKRD
  #9. BigInteger c2=H(U|S|W|AdditionalData|h_KRD) 
  ctx=H_Zp_init();
@@ -435,7 +462,6 @@ def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
  flag=true;
  if(i_cprime!=i_c):
   flag=false;
- 
  #4 e(R,Y)!=e(S,P2), fail if not equal
  if(_e(R,Y)!=_e(S,P2)):
    flag=false;
@@ -443,6 +469,7 @@ def ECDAA_Verify(X,Y, Data, Data_s8, h_KRD, h_s8,  i_c,s,R,S,T,W,n):
  #5 e(T,P2)==e(R.W, X) ? fail if not equal  
  if(_e(T,P2)!=_e(R+W,X)):
    flag=false;
+
  #6 for all rogues, if W=S^sk, fail
  # It is assumed that rogue checking is done prior to the call
  
