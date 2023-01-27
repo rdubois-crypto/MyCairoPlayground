@@ -27,6 +27,7 @@ from sage.structure.proof.all import arithmetic
 from sage.crypto.util import bin_to_ascii
 
 from hashlib import *
+from sha3 import keccak_256    
 
 #uncomment the curve to be used
 #BLS12_381 : future of Ethereum precompiled contracts
@@ -106,7 +107,7 @@ Fp=GF(r); #yes i hate those notations
 #################################
 # the core hash function used is defined here
 def H_Zp_init():
- ctx = sha256(); 
+ ctx = keccak_256(); 
  return ctx;
 
 

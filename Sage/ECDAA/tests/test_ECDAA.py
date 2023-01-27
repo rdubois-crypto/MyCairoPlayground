@@ -24,8 +24,44 @@ from sage.structure.proof.all import arithmetic
 from sage.crypto.util import bin_to_ascii
 from hashlib import *
 
+#this is the ethereum version of pre-sha3 standard:
+from sha3 import keccak_256    
 from ECDAA.ecdaa import *
 
+
+
+def test_ethereum_hash():
+ 
+ #first attempt: use ascci encoding
+ res=keccak_256('Hello world!'.encode()).hexdigest()
+ print("1. keccak('Hello world!)'",  hex(int('0x'+res,16)));
+ #second attempt, convert to numbers, lsb:
+ h_in=8031924123371070792+2^64*560229490;
+ ctx= keccak_256(); 
+ ctx=H_Zp_update(ctx, h_in, 12);	
+ print("2. keccak('Hello world!)", ctx.hexdigest());
+ 
+ #third attempt, convert to numbers, msb:
+ h_in=8031924123371070792*2^64+560229490;
+ ctx= keccak_256(); 
+ ctx=H_Zp_update(ctx, h_in, 12);	
+ print("3. keccak('Hello world!)", ctx.hexdigest());
+ 
+ 
+ digeste=keccak_256('testing'.encode()).hexdigest()
+ #vector extracted from https://ethereum.stackexchange.com/questions/550/which-cryptographic-hash-function-does-ethereum-use
+ if(digeste!='5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02'):
+    return false;
+ 
+ ctx= keccak_256(); 
+ ctx=H_Zp_update(ctx, 0x616263, 3);	
+ #vector extracted from https://gist.github.com/miguelmota/97b3a46291bc41a9b3054e75609d1dbf
+ if(ctx.hexdigest()=='4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45'):
+  return true;
+ else:
+  return false;
+ 
+ 
  
 #vector extracted from https://www.di-mgt.com.au/sha_testvectors.html
 def test_sha512():
@@ -44,6 +80,14 @@ def test_sha256():
  else:
       return false;
 
+
+def test_ethereum_keccak():   
+ ctx= sha256(); 
+ ctx=H_Zp_update(ctx, 0x616263, 3);	
+ if(ctx.hexdigest()=='ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'):
+      return true;
+ else:
+      return false;
       
 #mathematical validity checking (formulae consistency)
 def test_CheckSetup():
@@ -99,8 +143,10 @@ if __name__ == "__main__":
     arithmetic(False)
    
     print("\n\n######## Test ECDAA with curve:", curve_name);
-    
+   
     print("---- Test Encodings:");
+   
+    print("test_ethereum_hash:",test_ethereum_hash());
     print("test_sha256:",test_sha512());
     print("test_sha512:",test_sha512());
     
