@@ -1,0 +1,153 @@
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{bbm}
+\usepackage{pgfplots}
+\usepackage{tikz}
+%\usepackage{physics}
+\usepackage{calligra}
+\usepackage{csquotes}
+%\usepackage{tensor}
+\usepackage[thicklines]{cancel}
+\usepackage{tcolorbox}
+%\usepackage{pstricks}
+\usepackage[backend=biber, bibstyle=nature, sorting=nty, citestyle=numeric-comp]{biblatex} %Custom bibliography
+    \addbibresource{bib.bib} %Load references
+\usepackage{chronology}
+\usepackage{msc}
+
+\DeclareMathAlphabet{\mathcalligra}{T1}{calligra}{m}{n}
+\DeclareFontShape{T1}{calligra}{m}{n}{<->s*[2.2]callig15}{}
+\newcommand{\scriptr}{\mathcalligra{r}\,}
+\newcommand{\boldscriptr}{\pmb{\mathcalligra{r}}\,}
+\def\rc{\scriptr}
+\def\brc{\boldscriptr}
+\def\hrc{\hat\brc}
+\newcommand{\ie}{\emph{i.e.}} %id est
+\newcommand{\eg}{\emph{e.g.}} %exempli gratia
+\newcommand{\rtd}[1]{\ensuremath{\left\lfloor #1 \right\rfloor}}
+\newcommand{\dirac}[1]{\ensuremath{\delta \left( #1 \right)}}
+\newcommand{\diract}[1]{\ensuremath{\delta^3 \left( #1 \right)}}
+\newcommand{\e}{\ensuremath{\epsilon_0}}
+\newcommand{\m}{\ensuremath{\mu_0}}
+\newcommand{\V}{\ensuremath{\mathcal{V}}}
+\newcommand{\prnt}[1]{\ensuremath{\left(#1\right)}} %parentheses
+\newcommand{\colch}[1]{\ensuremath{\left[#1\right]}} %square brackets
+\newcommand{\chave}[1]{\ensuremath{\left\{#1\right\}}}  %curly brackets
+\newcommand\eqdef{\stackrel{\mathclap{\normalfont \tiny\mbox{\textrm{def}}}}{=}}
+\useoutertheme{infolines}
+\useinnertheme{rectangles}
+\usefonttheme{professionalfonts}
+
+
+\definecolor{blue2}{HTML}{045FB4}
+\definecolor{green2}{HTML}{46C235}
+\definecolor{red2}{HTML}{EE4848}
+\definecolor{violet2}{HTML}{A647E5}
+\definecolor{orange2}{HTML}{FF7425}
+\definecolor{darkred}{HTML}{5C2020}
+\definecolor{gray}{HTML}{303030}
+\definecolor{yellow}{HTML}{f0be52}
+\definecolor{lightdarkgold}{HTML}{EEBC1D}
+
+\renewcommand{\CancelColor}{\color{darkred}}
+
+\makeatletter
+\newcommand{\mybox}[1]{%
+  \setbox0=\hbox{#1}%
+  \setlength{\@tempdima}{\dimexpr\wd0+13pt}%
+  \begin{tcolorbox}[colback=gray,colframe=gray,boxrule=0.5pt,arc=4pt,
+      left=6pt,right=6pt,top=6pt,bottom=6pt,boxsep=0pt,width=\@tempdima]
+    \textcolor{yellow}{#1}
+  \end{tcolorbox}
+}
+\makeatother
+
+
+\pgfplotsset{my style/.append style={axis x line=middle, axis y line=
+middle, xlabel={$x$}, ylabel={$y$}, axis equal }}
+
+
+\usecolortheme[named=gray]{structure}
+\usecolortheme{sidebartab}
+\usecolortheme{orchid}
+\usecolortheme{whale}
+\setbeamercolor{titlelike}{parent=structure, bg=structure, fg=white}
+\setbeamercolor{section in toc}{fg= white}
+\setbeamercolor{subsection in toc}{fg= white}
+%\setbeamercolor*{sidebar}{fg=red2,bg=gray!15!white}
+
+\setbeamercolor{item projected}{bg=yellow, fg = gray}
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{local structure}{fg=yellow}
+
+\setbeamercolor{alerted text}{fg=white}
+\setbeamercolor{block title}{bg = yellow}
+\setbeamercolor{block title alerted}{bg=red2}
+\setbeamercolor{block title example}{bg=green2}
+\setbeamercolor{background canvas}{bg=gray}
+\setbeamercolor{normal text}{bg=gray,fg=white}
+
+
+\setbeamertemplate{footline}
+        {
+      \leavevmode%
+      \hbox{%
+      \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+        \usebeamerfont{author in head/foot}\insertshortauthor~~(\insertshortinstitute)
+      \end{beamercolorbox}%
+      \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+        \usebeamerfont{title in head/foot}\insertshorttitle
+      \end{beamercolorbox}%
+      \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{date in head/foot}%
+        \usebeamerfont{date in head/foot}\insertshortdate{}%\hspace*{2em}
+
+    %#turning the next line into a comment, erases the frame numbers
+        %\insertframenumber{} / \inserttotalframenumber\hspace*{2ex} 
+
+      \end{beamercolorbox}}%
+      \vskip0pt%
+    }
+
+
+\setbeamertemplate{blocks}[rectangle]
+\setbeamercovered{dynamic}
+
+
+
+
+%\setbeamercolor{author}{fg=yellow}
+%\setbeamercolor{title}{fg = yellow}
+%\setbeamerfont{title}{size=\Large, series=\bfseries}
+%\setbeamerfont{author}{size=\footnotesize}
+%\setbeamerfont{date}{size=\small}
+
+
+\setbeamertemplate{section page}
+{
+	\begin{centering}
+		\begin{beamercolorbox}[sep=27pt,center]{part title}
+			\usebeamerfont{section title}\insertsection\par
+			\usebeamerfont{subsection title}\insertsubsection\par
+		\end{beamercolorbox}
+	\end{centering}
+}
+
+
+
+
+
+%\setbeamertemplate{subsection page}
+%{
+%	\begin{centering}
+%		\begin{beamercolorbox}[sep=12pt,center]{part title}
+%			\usebeamerfont{subsection title}\insertsubsection\par
+%		\end{beamercolorbox}
+%	\end{centering}
+%}
+
+\newcommand{\hlight}[1]{\colorbox{violet!50}{#1}}
+\newcommand{\hlighta}[1]{\colorbox{darkred!50}{#1}}
